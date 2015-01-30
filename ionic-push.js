@@ -29,4 +29,4 @@ angular.module('ionic.services.push', ['ngCordova', 'ionic.services.core'])
     // Wait until the device is ready
     init();
   });
-});
+}]);
