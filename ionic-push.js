@@ -1,4 +1,4 @@
-angular.module('ionic.services.push', ['ngCordova', 'ionic.services.core'])
+angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
 
 /**
  * The Ionic Push service client wrapper.
@@ -12,10 +12,10 @@ angular.module('ionic.services.push', ['ngCordova', 'ionic.services.core'])
     "alert": true,
   };
 
-  function init() {
     var app = $ionicApp.getApp();
 
-    console.log('GOT APP', app);
+    console.log('GOT APPPLE', app);
+  function init() {
     /*
     $cordovaPush.register(config).then(function(result) {
       // Success -- send deviceToken to server, and store 
