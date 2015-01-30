@@ -4,7 +4,10 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  * The Ionic Push service client wrapper.
  *
  */
-.factory('$ionicPush', ['$http', '$cordovaPush', function($http, $cordovaPush, $ionicApp) {
+.factory('$ionicPush', [
+  '$http', '$cordovaPush', '$ionicApp', '$log',
+  
+function($http, $cordovaPush, $ionicApp, $log) {
 
   var iosConfig = {
     "badge": true,
@@ -12,21 +15,49 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
     "alert": true,
   };
 
-    var app = $ionicApp.getApp();
+  // Grab the current app
+  var app = $ionicApp.getApp();
+  
+  if(!app || !app.app_id) {
+    $log.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
+  }
 
-    console.log('GOT APPPLE', app);
   function init() {
-    /*
-    $cordovaPush.register(config).then(function(result) {
+    var api = $ionicApp.getValue('push_api_server');
+    $log.debug('PUSH: Connecting to push api', api);
+
+    $cordovaPush.register(iosConfig).then(function(result) {
+
       // Success -- send deviceToken to server, and store 
-      console.log("result: " + result)
-      $http.post("http://server.co/", {user: "Bob", tokenID: result.deviceToken})
+      var req = {
+        method: 'POST',
+        url: api + "/api/v1/register-device-token",
+        headers: {
+          'X-Ionic-Applicaton-Id': $ionicApp.getId(),
+          'X-Ionic-API-Key': $ionicApp.getApiKey()
+        },
+        data: {
+          ios_token: token,
+          metadata: {
+          }
+        }
+      };
+
+      $http(req)
+        .success(function(data, status) {
+          alert("Success: " + data);
+        })
+        .error(function(error, status, headers, config) {
+          alert("Error: " + error + " " + status + " " + headers);
+        });
     });
-    */
   }
 
   document.addEventListener("deviceready", function() {
     // Wait until the device is ready
-    init();
+    app && init();
   });
+
+  return {
+  }
 }]);
