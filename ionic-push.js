@@ -2,6 +2,13 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
 
 /**
  * The Ionic Push service client wrapper.
+ * 
+ * Example:
+ * 
+ * angular.controller(['$scope', '$ionicPush', function($scope, $ionicPush) {
+ *  
+ *   
+ }])
  *
  */
 .factory('$ionicPush', [
