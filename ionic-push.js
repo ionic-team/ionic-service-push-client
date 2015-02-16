@@ -52,10 +52,10 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
 
                     $http(req)
                         .success(function(data, status) {
-                            $log.debug("Success: " + data);
+                            alert("Success: " + data);
                         })
                         .error(function(error, status, headers, config) {
-                            $log.debug("Error: " + error + " " + status + " " + headers);
+                            alert("Error: " + error + " " + status + " " + headers);
                         });
                 });
             }
