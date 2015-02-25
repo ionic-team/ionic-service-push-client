@@ -16,6 +16,6 @@
     "tests"
   ],
   "dependencies": {
-    "ionic-service-core": "master"
+    "ionic-service-core": ">=0.0.2"
   }
 }
