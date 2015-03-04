@@ -23,48 +23,43 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
             }
 
             function init(metadata) {
-                var gcmKey = $ionicApp.getGcmKey();
-                var config;
+                var gcmKey = $ionicApp.getGcmId();
                 var api = $ionicApp.getValue('push_api_server');
 
-                if(gcmKey !== 'None') {
-                    //Default configuration for Android
-                    config = {
-                        "senderID": gcmKey
-                    };
-                } else {
-                    //Default configuration for iOS
-                    config = {
-                        "badge": true,
-                        "sound": true,
-                        "alert": true
-                    };
-                }
+                //Default configuration
+                var config = {
+                    "senderID": gcmKey,
+                    "badge": true,
+                    "sound": true,
+                    "alert": true
+                };
 
                 $cordovaPush.register(config).then(function(token) {
                     $log.debug('Device token: ' + token);
 
-                    // Success -- send deviceToken to server, and store
-                    var req = {
-                        method: 'POST',
-                        url: api + "/api/v1/register-device-token",
-                        headers: {
-                            'X-Ionic-Application-Id': $ionicApp.getId(),
-                            'X-Ionic-API-Key': $ionicApp.getApiKey()
-                        },
-                        data: {
-                            ios_token: token,
-                            metadata: metadata
-                        }
-                    };
+                    if (token !== 'OK') {
+                        // Success -- send deviceToken to server, and store
+                        var req = {
+                            method: 'POST',
+                            url: api + "/api/v1/register-device-token",
+                            headers: {
+                                'X-Ionic-Application-Id': $ionicApp.getId(),
+                                'X-Ionic-API-Key': $ionicApp.getApiKey()
+                            },
+                            data: {
+                                ios_token: token,
+                                metadata: metadata
+                            }
+                        };
 
-                    $http(req)
-                        .success(function(data, status) {
-                            alert("Success: " + data);
-                        })
-                        .error(function(error, status, headers, config) {
-                            alert("Error: " + error + " " + status + " " + headers);
-                        });
+                        $http(req)
+                            .success(function (data, status) {
+                                alert("Success: " + data);
+                            })
+                            .error(function (error, status, headers, config) {
+                                alert("Error: " + error + " " + status + " " + headers);
+                            });
+                    }
                 });
             }
 
