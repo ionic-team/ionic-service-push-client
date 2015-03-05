@@ -9,90 +9,98 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  * }])
  *
  */
-    .factory('$ionicPush', [
-        '$http', '$cordovaPush', '$ionicApp', '$log',
+.factory('$ionicPush', [
+  '$http', '$cordovaPush', '$ionicApp', '$log', '$q',
 
-        function($http, $cordovaPush, $ionicApp, $log) {
+function($http, $cordovaPush, $ionicApp, $log, $q) {
 
-            // Grab the current app
-            var app = $ionicApp.getApp();
+  // Grab the current app
+  var app = $ionicApp.getApp();
 
-            //Check for required credentials
-            if(!app || !app.app_id) {
-                $log.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
-            }
+  //Check for required credentials
+  if(!app || !app.app_id) {
+    console.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
+  }
 
-            function init(metadata) {
-                var gcmKey = $ionicApp.getGcmId();
-                var api = $ionicApp.getValue('push_api_server');
+  function init(metadata) {
+    var defer = $q.defer();
 
-                //Default configuration
-                var config = {
-                    "senderID": gcmKey,
-                    "badge": true,
-                    "sound": true,
-                    "alert": true
-                };
+    var gcmKey = $ionicApp.getGcmId();
+    var api = $ionicApp.getValue('push_api_server');
 
-                $cordovaPush.register(config).then(function(token) {
-                    $log.debug('Device token: ' + token);
+    //Default configuration
+    var config = {
+      "senderID": gcmKey,
+      "badge": true,
+      "sound": true,
+      "alert": true
+    };
 
-                    if (token !== 'OK') {
-                        // Success -- send deviceToken to server, and store
-                        var req = {
-                            method: 'POST',
-                            url: api + "/api/v1/register-device-token",
-                            headers: {
-                                'X-Ionic-Application-Id': $ionicApp.getId(),
-                                'X-Ionic-API-Key': $ionicApp.getApiKey()
-                            },
-                            data: {
-                                ios_token: token,
-                                metadata: metadata
-                            }
-                        };
+    $cordovaPush.register(config).then(function(token) {
+      console.log('Device token:', token);
 
-                        $http(req)
-                            .success(function (data, status) {
-                                alert("Success: " + data);
-                            })
-                            .error(function (error, status, headers, config) {
-                                alert("Error: " + error + " " + status + " " + headers);
-                            });
-                    }
-                });
-            }
+      defer.resolve(token);
 
-            function androidInit(token, metadata) {
-                var api = $ionicApp.getValue('push_api_server');
-                var req = {
-                    method: 'POST',
-                    url: api + "/api/v1/register-device-token",
-                    headers: {
-                        'X-Ionic-Application-Id': $ionicApp.getId(),
-                        'X-Ionic-API-Key': $ionicApp.getApiKey()
-                    },
-                    data: {
-                        ios_token: token,
-                        metadata: metadata
-                    }
-                };
+      if(token !== 'OK') {
+        // Success -- send deviceToken to server, and store
+        var req = {
+          method: 'POST',
+          url: api + "/api/v1/register-device-token",
+          headers: {
+            'X-Ionic-Application-Id': $ionicApp.getId(),
+            'X-Ionic-API-Key': $ionicApp.getApiKey()
+          },
+          data: {
+            ios_token: token,
+            metadata: metadata
+          }
+        };
 
-                $http(req)
-                    .success(function(data, status) {
-                        alert("Success: " + data);
-                    })
-                    .error(function(error, status, headers, config) {
-                        alert("Error: " + error + " " + status + " " + headers);
-                    });
-            }
+        $http(req)
+          .success(function (data, status) {
+            console.log('Register success', data);
+          })
+          .error(function (error, status, headers, config) {
+            console.log('Register error! Code:', status, error, headers);
+          });
+      }
+    });
 
-            return {
-                register: function(metadata){
-                    app && init(metadata);
-                },
-                callback: function(token, metadata){
-                    app && androidInit(token, metadata);
-                }
-            }
-        }]);
+    return defer.promise;
+  }
+
+  function androidInit(token, metadata) {
+      var api = $ionicApp.getValue('push_api_server');
+      var req = {
+        method: 'POST',
+        url: api + "/api/v1/register-device-token",
+        headers: {
+          'X-Ionic-Application-Id': $ionicApp.getId(),
+          'X-Ionic-API-Key': $ionicApp.getApiKey()
+        },
+        data: {
+          ios_token: token,
+          metadata: metadata
+        }
+      };
+
+      $http(req)
+        .success(function(data, status) {
+          console.log('Register success', data);
+        })
+        .error(function(error, status, headers, config) {
+          console.log('Register error! Code:', status, error, headers);
+        });
+  }
+
+  return {
+      register: function(metadata){
+        if(app) {
+          return init(metadata);
+        }
+      },
+      callback: function(token, metadata){
+          app && androidInit(token, metadata);
+      }
+  }
+}]);
