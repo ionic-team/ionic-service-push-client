@@ -10,9 +10,9 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  *
  */
 .factory('$ionicPush', [
-  '$http', '$cordovaPush', '$ionicApp', '$log', '$q',
+  '$http', '$cordovaPush', '$ionicApp', '$rootScope', '$log', '$q',
 
-function($http, $cordovaPush, $ionicApp, $log, $q) {
+function($http, $cordovaPush, $ionicApp, $rootScope, $log, $q) {
 
   // Grab the current app
   var app = $ionicApp.getApp();
@@ -22,9 +22,10 @@ function($http, $cordovaPush, $ionicApp, $log, $q) {
     console.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
   }
 
-  function init(metadata) {
+  function init(options, metadata) {
     var defer = $q.defer();
 
+    // TODO: This should be part of a config not a direct method
     var gcmKey = $ionicApp.getGcmId();
     var api = $ionicApp.getValue('push_api_server');
 
@@ -37,7 +38,7 @@ function($http, $cordovaPush, $ionicApp, $log, $q) {
     };
 
     $cordovaPush.register(config).then(function(token) {
-      console.log('Device token:', token);
+      console.log('$ionicPush:REGISTERED', token);
 
       defer.resolve(token);
 
@@ -58,7 +59,7 @@ function($http, $cordovaPush, $ionicApp, $log, $q) {
 
         $http(req)
           .success(function (data, status) {
-            console.log('Register success', data);
+            console.log('Register success', JSON.stringify(data));
           })
           .error(function (error, status, headers, config) {
             console.log('Register error! Code:', status, error, headers);
@@ -66,41 +67,124 @@ function($http, $cordovaPush, $ionicApp, $log, $q) {
       }
     });
 
+    $rootScope.$on('$cordovaPush:notificationReceived', function(event, notification) {
+      console.log('$ionicPush:RECEIVED', JSON.stringify(notification));
+
+      var callbackRet = options.onNotification && options.onNotification(notification);
+
+      // If the custom handler returns false, don't handle this at all in
+      // our code
+      if(callbackRet === false) {
+        return;
+      }
+
+      if (ionic.Platform.isAndroid() && notification.event == "registered") {
+        /**
+         * Android handles push notification registration in a callback from the GCM service (whereas
+         * iOS can be handled in a single call), so we need to check for a special notification type
+         * here.
+         */
+        console.log('$ionicPush:REGISTERED', notification.regid);
+        $ionicPush.callback(notification.regid);
+      }
+      
+      // If we have the notification plugin, show this
+      if(options.canShowAlert) {
+        if (navigator.notification) {
+          navigator.notification.alert(notification.alert);
+        } else {
+          // Browser version
+          alert(notification.alert);
+        }
+      }
+
+      if(options.canPlaySound) {
+        if (notification.sound && window.Media) {
+          var snd = new Media(event.sound);
+          snd.play();
+        }
+      }
+
+      if(options.canSetBadge) {
+        if (notification.badge) {
+          $cordovaPush.setBadgeNumber(notification.badge).then(function(result) {
+            // Success!
+          }, function(err) {
+            console.log('Could not set badge!', err);
+            // An error occurred. Show a message to the user
+          });
+        }
+      }
+    });
+    
+
     return defer.promise;
   }
 
   function androidInit(token, metadata) {
-      var api = $ionicApp.getValue('push_api_server');
-      var req = {
-        method: 'POST',
-        url: api + "/api/v1/register-device-token",
-        headers: {
-          'X-Ionic-Application-Id': $ionicApp.getId(),
-          'X-Ionic-API-Key': $ionicApp.getApiKey()
-        },
-        data: {
-          ios_token: token,
-          metadata: metadata
-        }
-      };
+    var api = $ionicApp.getValue('push_api_server');
+    var req = {
+      method: 'POST',
+      url: api + "/api/v1/register-device-token",
+      headers: {
+        'X-Ionic-Application-Id': $ionicApp.getId(),
+        'X-Ionic-API-Key': $ionicApp.getApiKey()
+      },
+      data: {
+        ios_token: token,
+        metadata: metadata
+      }
+    };
 
-      $http(req)
-        .success(function(data, status) {
-          console.log('Register success', data);
-        })
-        .error(function(error, status, headers, config) {
-          console.log('Register error! Code:', status, error, headers);
-        });
+    $http(req)
+      .success(function(data, status) {
+        console.log('Register success', data);
+      })
+      .error(function(error, status, headers, config) {
+        console.log('Register error! Code:', status, error, headers);
+      });
   }
 
   return {
-      register: function(metadata){
-        if(app) {
-          return init(metadata);
-        }
-      },
-      callback: function(token, metadata){
-          app && androidInit(token, metadata);
-      }
+    /**
+     * Register for push notifications.
+     *
+     * Configure the default notification behavior by using the options param:
+     *
+     * {
+     *   // Whether to allow notifications to pop up an alert while in the app.
+     *   // Setting this to false lets you control the push behavior more closely.
+     *   allowAlert: true/false (default: true)
+     *
+     *   // Whether to allow notifications to update the badge
+     *   allowBadge: true/false (default: true)
+     *
+     *   // Whether to allow notifications to play a sound
+     *   allowSound: true/false (default: true)
+     *
+     *   // A callback to do some custom task on notification
+     *   onNotification: true/false (default: true)
+     * }
+     */
+    register: function(options, metadata){
+      if(!app) { return; }
+
+      options = angular.extend({
+        canShowAlert: true,
+        canSetBadge: true,
+        canPlaySound: true,
+        onNotification: function() { return true; }
+      }, options);
+
+      return init(options, metadata);
+    },
+    unregister: function(options) {
+      return $cordovaPush.unregister(options);
+    },
+    callback: function(token, metadata){
+      app && androidInit(token, metadata);
+    }
   }
 }]);
+
+
