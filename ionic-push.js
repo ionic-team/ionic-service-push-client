@@ -180,9 +180,6 @@ function($http, $cordovaPush, $ionicApp, $rootScope, $log, $q) {
     },
     unregister: function(options) {
       return $cordovaPush.unregister(options);
-    },
-    callback: function(token, metadata){
-      app && androidInit(token, metadata);
     }
   }
 }]);
