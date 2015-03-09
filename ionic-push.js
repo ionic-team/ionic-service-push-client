@@ -85,7 +85,7 @@ function($http, $cordovaPush, $ionicApp, $rootScope, $log, $q) {
          * here.
          */
         console.log('$ionicPush:REGISTERED', notification.regid);
-        $ionicPush.callback(notification.regid);
+        androidInit(notification.regid, metadata);
       }
       
       // If we have the notification plugin, show this
@@ -131,7 +131,7 @@ function($http, $cordovaPush, $ionicApp, $rootScope, $log, $q) {
         'X-Ionic-API-Key': $ionicApp.getApiKey()
       },
       data: {
-        ios_token: token,
+        android_token: token,
         metadata: metadata
       }
     };
