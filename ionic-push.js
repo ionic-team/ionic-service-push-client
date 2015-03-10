@@ -89,7 +89,7 @@ function($http, $cordovaPush, $ionicApp, $rootScope, $log, $q) {
       }
       
       // If we have the notification plugin, show this
-      if(options.canShowAlert) {
+      if(options.canShowAlert && notification.alert) {
         if (navigator.notification) {
           navigator.notification.alert(notification.alert);
         } else {
