@@ -107,7 +107,7 @@ function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
 
       if(options.canPlaySound) {
         if (notification.sound && window.Media) {
-          var snd = new Media(event.sound);
+          var snd = new Media(notification.sound);
           snd.play();
         }
       }
