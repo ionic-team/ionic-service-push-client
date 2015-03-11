@@ -59,7 +59,7 @@ function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
 
         // Push the token into the user data
         try {
-          $ionicUser.push('push.ios_tokens', token);
+          $ionicUser.push('_push.ios_tokens', token, true);
         } catch(e) {
           console.warn('Received push token before user was identified and will not be synced with ionic.io. Make sure to call $ionicUser.identify() before calling $ionicPush.register.');
         }
@@ -145,7 +145,7 @@ function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
 
     // Push the token into the user data
     try {
-      $ionicUser.push('push.android_tokens', token);
+      $ionicUser.push('_push.android_tokens', token);
     } catch(e) {
       console.warn('Received push token before user was identified and will not be synced with ionic.io. Make sure to call $ionicUser.identify() before calling $ionicPush.register.');
     }
