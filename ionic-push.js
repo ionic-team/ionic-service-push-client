@@ -10,9 +10,11 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  *
  */
 .factory('$ionicPush', [
-  '$http', '$cordovaPush', '$ionicApp', '$ionicUser', '$rootScope', '$log', '$q',
+  '$http', '$cordovaPush',
+  '$ionicApp', '$ionicPushActions',
+  '$ionicUser', '$rootScope', '$log', '$q',
 
-function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
+function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootScope, $log, $q) {
 
   // Grab the current app
   var app = $ionicApp.getApp();
@@ -122,6 +124,13 @@ function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
           });
         }
       }
+
+      // Run any custom notification actions
+      if(options.canRunActionsOnWake) {
+        if(notification.foreground == "0" || notification.foreground === false) {
+          $ionicPushActions.run(notification);
+        }
+      }
     });
     
 
@@ -177,6 +186,10 @@ function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
      *   // Whether to allow notifications to play a sound
      *   allowSound: true/false (default: true)
      *
+     *   // Whether to run auto actions, like navigating to a state, when a push
+     *   // is opened outside of the app (foreground is false)
+     *   canRunActionsOnWake: true/false (default: true)
+     *
      *   // A callback to do some custom task on notification
      *   onNotification: true/false (default: true)
      * }
@@ -188,6 +201,7 @@ function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
         canShowAlert: true,
         canSetBadge: true,
         canPlaySound: true,
+        canRunActionsOnWake: true,
         onNotification: function() { return true; }
       }, options);
 
@@ -197,6 +211,29 @@ function($http, $cordovaPush, $ionicApp, $ionicUser, $rootScope, $log, $q) {
       return $cordovaPush.unregister(options);
     }
   }
-}]);
+}])
 
+.factory('$ionicPushActions', [
+    '$rootElement',
+    '$injector',
+function($rootElement, $injector) {
+  return {
+    run: function(notification) {
+      if(notification.$state) {
+        // Auto navigate to state
+
+        var injector = $rootElement.injector();
+        if(injector.has('$state')) {
+          $state = injector.get('$state');
+          var p = {};
+          try {
+            p = JSON.parse(notification.$stateParams);
+          } catch(e) {
+          }
+          $state.go(notification.$state, p);
+        }
+      }
+    }
+  }
+}])
 
