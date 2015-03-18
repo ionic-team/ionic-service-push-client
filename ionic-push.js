@@ -45,19 +45,6 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
       defer.resolve(token);
 
       if(token !== 'OK') {
-        // Success -- send deviceToken to server, and store
-        var req = {
-          method: 'POST',
-          url: api + "/api/v1/register-device-token",
-          headers: {
-            'X-Ionic-Application-Id': $ionicApp.getId(),
-            'X-Ionic-API-Key': $ionicApp.getApiKey()
-          },
-          data: {
-            ios_token: token,
-            metadata: metadata
-          }
-        };
 
         $rootScope.$emit('$cordovaPush:tokenReceived', {
           token: token,
@@ -70,14 +57,6 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
         } catch(e) {
           console.warn('Received push token before user was identified and will not be synced with ionic.io. Make sure to call $ionicUser.identify() before calling $ionicPush.register.');
         }
-
-        $http(req)
-          .success(function (data, status) {
-            console.log('Register success', JSON.stringify(data));
-          })
-          .error(function (error, status, headers, config) {
-            console.log('Register error! Code:', status, error, headers);
-          });
       }
     });
 
@@ -105,7 +84,7 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
         });
         androidInit(notification.regid, metadata);
       }
-      
+
       // If we have the notification plugin, show this
       if(options.canShowAlert && notification.alert) {
         if (navigator.notification) {
@@ -141,41 +120,18 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
         }
       }
     });
-    
+
 
     return defer.promise;
   }
 
   function androidInit(token, metadata) {
-    var api = $ionicApp.getValue('push_api_server');
-    var req = {
-      method: 'POST',
-      url: api + "/api/v1/register-device-token",
-      headers: {
-        'X-Ionic-Application-Id': $ionicApp.getId(),
-        'X-Ionic-API-Key': $ionicApp.getApiKey()
-      },
-      data: {
-        android_token: token,
-        metadata: metadata
-      }
-    };
-
     // Push the token into the user data
     try {
       $ionicUser.push('_push.android_tokens', token, true);
     } catch(e) {
       console.warn('Received push token before user was identified and will not be synced with ionic.io. Make sure to call $ionicUser.identify() before calling $ionicPush.register.');
     }
-    
-
-    $http(req)
-      .success(function(data, status) {
-        console.log('Register success', data);
-      })
-      .error(function(error, status, headers, config) {
-        console.log('Register error! Code:', status, error, headers);
-      });
   }
 
   return {
