@@ -59,6 +59,11 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
           }
         };
 
+        $rootScope.$emit('$cordovaPush:tokenReceived', {
+          token: token,
+          platform: 'ios'
+        });
+
         // Push the token into the user data
         try {
           $ionicUser.push('_push.ios_tokens', token, true);
@@ -94,6 +99,10 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
          * here.
          */
         console.log('$ionicPush:REGISTERED', notification.regid);
+        $rootScope.$emit('$cordovaPush:tokenReceived', {
+          token: notification.regid,
+          platform: 'android'
+        });
         androidInit(notification.regid, metadata);
       }
       
@@ -202,7 +211,8 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
         canSetBadge: true,
         canPlaySound: true,
         canRunActionsOnWake: true,
-        onNotification: function() { return true; }
+        onNotification: function() { return true; },
+        onTokenRecieved: function(token) { }
       }, options);
 
       return init(options, metadata);
