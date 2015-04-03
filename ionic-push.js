@@ -58,6 +58,8 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
           console.warn('Received push token before user was identified and will not be synced with ionic.io. Make sure to call $ionicUser.identify() before calling $ionicPush.register.');
         }
       }
+    }, function(err) {
+      console.error('$ionicPush:REGISTER_ERROR', err);
     });
 
     $rootScope.$on('$cordovaPush:notificationReceived', function(event, notification) {
