@@ -24,7 +24,7 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
     console.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
   }
 
-  function init(options, metadata) {
+  function init(options) {
     var defer = $q.defer();
 
     // TODO: This should be part of a config not a direct method
@@ -84,7 +84,7 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
           token: notification.regid,
           platform: 'android'
         });
-        androidInit(notification.regid, metadata);
+        androidInit(notification.regid);
       }
 
       // If we have the notification plugin, show this
@@ -127,7 +127,7 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
     return defer.promise;
   }
 
-  function androidInit(token, metadata) {
+  function androidInit(token) {
     // Push the token into the user data
     try {
       $ionicUser.push('_push.android_tokens', token, true);
@@ -161,7 +161,7 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
      *   onNotification: true/false (default: true)
      * }
      */
-    register: function(options, metadata){
+    register: function(options, userdata){
       if(!app) { return; }
 
       options = angular.extend({
@@ -173,7 +173,24 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
         onTokenRecieved: function(token) { }
       }, options);
 
-      return init(options, metadata);
+      if (userdata){
+        var user = $ionicUser.get();
+        if(!userdata.user_id || !user.user_id) {
+          // Set your user_id here, or generate a random one
+          console.warn("No user ID specified in userdata or existing model, generating generic user ID.");
+          user.user_id = $ionicUser.generateGUID();
+        };
+
+        angular.extend(user, userdata);
+
+        console.log('Identifying user.')
+        $ionicUser.identify(user).then(function(){
+          return init(options);
+        });
+      }
+      else {
+        return init(options);
+      }
     },
     unregister: function(options) {
       return $cordovaPush.unregister(options);
