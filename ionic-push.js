@@ -162,35 +162,41 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
      * }
      */
     register: function(options, userdata){
-      if(!app) { return; }
+      return $q(function(resolve) {
+        if (!app) {
+          return;
+        }
 
-      options = angular.extend({
-        canShowAlert: true,
-        canSetBadge: true,
-        canPlaySound: true,
-        canRunActionsOnWake: true,
-        onNotification: function() { return true; },
-        onTokenRecieved: function(token) { }
-      }, options);
+        options = angular.extend({
+          canShowAlert: true,
+          canSetBadge: true,
+          canPlaySound: true,
+          canRunActionsOnWake: true,
+          onNotification: function () {
+            return true;
+          },
+          onTokenRecieved: function (token) { }
+        }, options);
 
-      if (userdata){
-        var user = $ionicUser.get();
-        if(!userdata.user_id || !user.user_id) {
-          // Set your user_id here, or generate a random one
-          console.warn("No user ID specified in userdata or existing model, generating generic user ID.");
-          user.user_id = $ionicUser.generateGUID();
-        };
+        if (userdata) {
+          var user = $ionicUser.get();
+          if (!userdata.user_id || !user.user_id) {
+            // Set your user_id here, or generate a random one
+            console.warn("No user ID specified in userdata or existing model, generating generic user ID.");
+            user.user_id = $ionicUser.generateGUID();
+          };
 
-        angular.extend(user, userdata);
+          angular.extend(user, userdata);
 
-        console.log('Identifying user.')
-        $ionicUser.identify(user).then(function(){
-          return init(options);
-        });
-      }
-      else {
-        return init(options);
-      }
+          console.log('Identifying user.')
+          $ionicUser.identify(user).then(function () {
+            resolve(init(options));
+          });
+          }
+        else {
+          resolve(init(options));
+        }
+      });
     },
     unregister: function(options) {
       return $cordovaPush.unregister(options);
