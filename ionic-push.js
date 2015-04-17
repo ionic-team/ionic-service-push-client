@@ -12,9 +12,9 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
 .factory('$ionicPush', [
   '$http', '$cordovaPush',
   '$ionicApp', '$ionicPushActions',
-  '$ionicUser', '$rootScope', '$log', '$q',
+  '$ionicUser', '$timeout', '$rootScope', '$log', '$q',
 
-function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootScope, $log, $q) {
+function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $timeout, $rootScope, $log, $q) {
 
   // Grab the current app
   var app = $ionicApp.getApp();
@@ -22,6 +22,27 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
   //Check for required credentials
   if(!app || !app.app_id) {
     console.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
+  }
+
+  function register(options, config) {
+
+    // If we're in development mode, generate a random token
+    if(options.development) {
+      var q = $q.defer();
+      $timeout(function() {
+        // Resolve with a guid for dev
+        q.resolve(
+          'DEV-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+            return v.toString(16);
+          });
+        );
+      });
+      return q.promise;
+    } else {
+      return $cordovaPush.register(config);
+    }
+
   }
 
   function init(options, metadata) {
@@ -39,7 +60,8 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
       "alert": true
     };
 
-    $cordovaPush.register(config).then(function(token) {
+    register(options, config).then(function(token) {
+
       console.log('$ionicPush:REGISTERED', token);
 
       defer.resolve(token);
@@ -165,6 +187,7 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
       if(!app) { return; }
 
       options = angular.extend({
+        development: false,
         canShowAlert: true,
         canSetBadge: true,
         canPlaySound: true,
