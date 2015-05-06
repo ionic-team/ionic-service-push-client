@@ -17,6 +17,7 @@
     "tests"
   ],
   "dependencies": {
-    "ionic-service-core": "master"
+    "ionic-service-core": "master",
+    "angular-websocket": "~1.0.9"
   }
 }

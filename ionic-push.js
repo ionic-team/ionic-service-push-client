@@ -46,11 +46,13 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
     if (app.dev_push) {
       var localNotifications = false;
+
       if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
         localNotifications = true;
       }
+
       var devToken = generateDevGuid();
-      var socketHost = api.replace(/^http/, 'ws');
+      var socketHost = api.replace(/^http/, 'ws') + '/dev/push';
       var dataStream = $websocket(socketHost);
 
       // Identify yourself
@@ -63,19 +65,23 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
       // Handle incoming DEV pushes
       dataStream.onMessage(function(message) {
-        if (localNotifications) {
-          console.log('$ionicPush: Received dev ' + message.data);
-          window.cordova.plugins.notification.local.registerPermission(function (granted) {
-            if (granted) {
-              window.cordova.plugins.notification.local.schedule({
-                title: 'DEVELOPMENT PUSH',
-                text: message.data
-              });
-            }
-          });
-        } else {
-          console.log('$ionicPush: No device, sending alert instead.');
-          alert(message.data);
+        console.log('$ionicPush: Received dev push ' + message.data);
+        // iOS REALLY doesn't like doing this inside a listener, bombs out on EXC_BAD_ACCESS...
+        if (!ionic.Platform.isIOS()) {
+          if (localNotifications) {
+            console.log('$ionicPush: Attempting to send local notification.');
+            window.cordova.plugins.notification.local.registerPermission(function (granted) {
+              if (granted) {
+                window.cordova.plugins.notification.local.schedule({
+                  title: 'DEVELOPMENT PUSH',
+                  text: message.data
+                });
+              }
+            });
+          } else {
+            console.log('$ionicPush: No device, sending alert instead.');
+            alert(message.data);
+          }
         }
       });
 
