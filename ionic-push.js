@@ -47,6 +47,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
     if (app.dev_push) {
       var localNotifications = false;
 
+      // If they have the local notification plugin, let them receive notifications with it, otherwise just do alerts
       if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
         localNotifications = true;
       }
