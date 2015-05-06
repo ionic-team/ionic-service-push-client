@@ -1,4 +1,4 @@
-angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
+angular.module('ionic.service.push', ['ngCordova', 'ngWebSocket', 'ionic.service.core'])
 
 /**
  * The Ionic Push service client wrapper.
@@ -9,12 +9,9 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  * }])
  *
  */
-.factory('$ionicPush', [
-  '$http', '$cordovaPush',
-  '$ionicApp', '$ionicPushActions',
-  '$ionicUser', '$rootScope', '$log', '$q',
+.factory('$ionicPush', ['$http', '$cordovaPush','$cordovaLocalNotification', '$ionicApp', '$ionicPushActions', '$ionicUser', '$rootScope', '$log', '$q', '$websocket',
 
-function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootScope, $log, $q) {
+function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushActions, $ionicUser, $rootScope, $log, $q, $websocket) {
 
   // Grab the current app
   var app = $ionicApp.getApp();
@@ -22,6 +19,14 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
   //Check for required credentials
   if(!app || !app.app_id) {
     console.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
+  }
+
+  function generateDevGuid() {
+    // Some crazy bit-twiddling to generate a random guid
+    return 'DEV-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+      return v.toString(16);
+    });
   }
 
   function init(options) {
@@ -39,28 +44,79 @@ function($http, $cordovaPush, $ionicApp, $ionicPushActions, $ionicUser, $rootSco
       "alert": true
     };
 
-    $cordovaPush.register(config).then(function(token) {
-      console.log('$ionicPush:REGISTERED', token);
+    if (app.dev_push) {
+      var localNotifications = false;
 
-      defer.resolve(token);
-
-      if(token !== 'OK') {
-
-        $rootScope.$emit('$cordovaPush:tokenReceived', {
-          token: token,
-          platform: 'ios'
-        });
-
-        // Push the token into the user data
-        try {
-          $ionicUser.push('_push.ios_tokens', token, true);
-        } catch(e) {
-          console.warn('Received push token before user was identified and will not be synced with ionic.io. Make sure to call $ionicUser.identify() before calling $ionicPush.register.');
-        }
+      // If they have the local notification plugin, let them receive notifications with it, otherwise just do alerts
+      if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
+        localNotifications = true;
       }
-    }, function(err) {
-      console.error('$ionicPush:REGISTER_ERROR', err);
-    });
+
+      var devToken = generateDevGuid();
+      var socketHost = api.replace(/^http/, 'ws') + '/dev/push';
+      var dataStream = $websocket(socketHost);
+
+      // Identify yourself
+      dataStream.send({id: devToken});
+
+      // Keep connection alive (Heroku)
+      setInterval(function(){
+        dataStream.send({ping: "Hello"});
+      }, 10000);
+
+      // Handle incoming DEV pushes
+      dataStream.onMessage(function(message) {
+        console.log('$ionicPush: Received dev push ' + message.data);
+        // iOS REALLY doesn't like doing this inside a listener, bombs out on EXC_BAD_ACCESS...
+        if (!ionic.Platform.isIOS()) {
+          if (localNotifications) {
+            console.log('$ionicPush: Attempting to send local notification.');
+            window.cordova.plugins.notification.local.registerPermission(function (granted) {
+              if (granted) {
+                window.cordova.plugins.notification.local.schedule({
+                  title: 'DEVELOPMENT PUSH',
+                  text: message.data
+                });
+              }
+            });
+          } else {
+            console.log('$ionicPush: No device, sending alert instead.');
+            alert(message.data);
+          }
+        }
+      });
+
+      console.log('$ionicPush:REGISTERED_DEV_MODE', devToken);
+      $rootScope.$emit('$cordovaPush:tokenReceived', {
+        token: devToken,
+        platform: 'none'
+      });
+      defer.resolve(devToken);
+
+    } else {
+      $cordovaPush.register(config).then(function(token) {
+        console.log('$ionicPush:REGISTERED', token);
+
+        defer.resolve(token);
+
+        if(token !== 'OK') {
+
+          $rootScope.$emit('$cordovaPush:tokenReceived', {
+            token: token,
+            platform: 'ios'
+          });
+
+          // Push the token into the user data
+          try {
+            $ionicUser.push('_push.ios_tokens', token, true);
+          } catch(e) {
+            console.warn('Received push token before user was identified and will not be synced with ionic.io. Make sure to call $ionicUser.identify() before calling $ionicPush.register.');
+          }
+        }
+      }, function(err) {
+        console.error('$ionicPush:REGISTER_ERROR', err);
+      });
+    }
 
     $rootScope.$on('$cordovaPush:notificationReceived', function(event, notification) {
       console.log('$ionicPush:RECEIVED', JSON.stringify(notification));
@@ -227,4 +283,3 @@ function($rootElement, $injector) {
     }
   }
 }])
-
