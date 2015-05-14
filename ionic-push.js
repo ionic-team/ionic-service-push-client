@@ -44,55 +44,74 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
       "alert": true
     };
 
+    /**
+     * For testing push notifications, set the dev_push flag in your config to true.
+     **/
     if (app.dev_push) {
       var localNotifications = false;
-
       // If they have the local notification plugin, let them receive notifications with it, otherwise just do alerts
       if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
         localNotifications = true;
       }
 
       var devToken = generateDevGuid();
-      var socketHost = api.replace(/^http/, 'ws') + '/dev/push';
-      var dataStream = $websocket(socketHost);
+      var devHost = api + '/dev/push';
 
-      // Identify yourself
-      dataStream.send({id: devToken});
-
-      // Keep connection alive (Heroku)
-      setInterval(function(){
-        dataStream.send({ping: "Hello"});
-      }, 10000);
-
-      // Handle incoming DEV pushes
-      dataStream.onMessage(function(message) {
-        console.log('$ionicPush: Received dev push ' + message.data);
-        // iOS REALLY doesn't like doing this inside a listener, bombs out on EXC_BAD_ACCESS...
-        if (!ionic.Platform.isIOS()) {
-          if (localNotifications) {
-            console.log('$ionicPush: Attempting to send local notification.');
-            window.cordova.plugins.notification.local.registerPermission(function (granted) {
-              if (granted) {
-                window.cordova.plugins.notification.local.schedule({
-                  title: 'DEVELOPMENT PUSH',
-                  text: message.data
-                });
-              }
-            });
-          } else {
-            console.log('$ionicPush: No device, sending alert instead.');
-            alert(message.data);
-          }
+      var req = {
+        method: 'POST',
+        url: devHost,
+        data: {
+          "dev_token": devToken
         }
-      });
+      };
 
-      console.log('$ionicPush:REGISTERED_DEV_MODE', devToken);
-      $rootScope.$emit('$cordovaPush:tokenReceived', {
-        token: devToken,
-        platform: 'none'
-      });
-      defer.resolve(devToken);
+      $http(req).success(function(resp){
+          console.log('$ionicPush:REGISTERED_DEV_MODE', devToken);
+          $rootScope.$emit('$cordovaPush:tokenReceived', {
+            token: devToken,
+            platform: 'none'
+          });
+          defer.resolve(devToken);
+        }).error(function(error){
+          console.log("$ionicPush: Error connecting dev_push service ", error);
+        });
 
+      var checkReq = {
+        method: 'GET',
+        url: devHost + '/check',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Ionic-Dev-Token': devToken
+        }
+      };
+
+      // Check for new dev pushes every 5 seconds
+      var checkPushes = setInterval(function(){
+        $http(checkReq).success(function(resp){
+          if (resp.messages.length > 0) {
+            if (localNotifications) {
+              console.log('$ionicPush: Attempting to send local notification.');
+              window.cordova.plugins.notification.local.registerPermission(function (granted) {
+                if (granted) {
+                  window.cordova.plugins.notification.local.schedule({
+                    title: 'DEVELOPMENT PUSH',
+                    text: resp.messages[0]
+                  });
+                }
+              });
+            } else {
+              console.log('$ionicPush: No device, sending alert instead.');
+              alert(resp.messages[0]);
+            }
+          }
+        }).error(function(error){
+          console.log("$ionicPush: Error checking for dev pushes ", error);
+        });
+      }, 5000);
+
+    /**
+     * It's a notmal push, do normal push things
+     */
     } else {
       $cordovaPush.register(config).then(function(token) {
         console.log('$ionicPush:REGISTERED', token);
