@@ -1,0 +1,19 @@
+{
+  "name": "ionic-service-push",
+  "version": "0.1.2",
+  "description": "Ionic Push Component",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/driftyco/ionic-service-push-client.git"
+  },
+  "keywords": [
+    "Ionic",
+    "push"
+  ],
+  "author": "Ionic",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/driftyco/ionic-service-push-client/issues"
+  },
+  "homepage": "https://github.com/driftyco/ionic-service-push-client#readme"
+}
