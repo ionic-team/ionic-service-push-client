@@ -1,4 +1,4 @@
-angular.module('ionic.service.push', ['ngCordova', 'ngWebSocket', 'ionic.service.core'])
+angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
 
 /**
  * The Ionic Push service client wrapper.
@@ -9,9 +9,9 @@ angular.module('ionic.service.push', ['ngCordova', 'ngWebSocket', 'ionic.service
  * }])
  *
  */
-.factory('$ionicPush', ['$http', '$cordovaPush','$cordovaLocalNotification', '$ionicApp', '$ionicPushActions', '$ionicUser', '$rootScope', '$log', '$q', '$websocket',
+.factory('$ionicPush', ['$http', '$cordovaPush','$cordovaLocalNotification', '$ionicApp', '$ionicPushActions', '$ionicUser', '$rootScope', '$log', '$q',
 
-function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushActions, $ionicUser, $rootScope, $log, $q, $websocket) {
+function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushActions, $ionicUser, $rootScope, $log, $q) {
 
   // Grab the current app
   var app = $ionicApp.getApp();
