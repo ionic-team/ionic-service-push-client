@@ -3,7 +3,7 @@
   "version": "0.1.4",
   "description": "Ionic Push Component",
   "dependencies": {
-    "ionic-service-core": ">=0.1.1"
+    "ionic-service-core": ">=0.1.4"
   },
   "repository": {
     "type": "git",
