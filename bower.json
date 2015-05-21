@@ -1,6 +1,6 @@
 {
   "name": "ionic-service-push",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "homepage": "http://ionic.io",
   "authors": [
     "Max Lynch <max@ionicframework.com>",
@@ -17,6 +17,6 @@
     "tests"
   ],
   "dependencies": {
-    "ionic-service-core": " >= 0.1.0"
+    "ionic-service-core": " >= 0.1.4"
   }
 }

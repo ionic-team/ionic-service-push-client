@@ -253,8 +253,9 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
           onTokenRecieved: function (token) { }
         }, options);
 
+        var user = $ionicUser.get();
+
         if (userdata) {
-          var user = $ionicUser.get();
           if (!userdata.user_id || !user.user_id) {
             // Set your user_id here, or generate a random one
             console.warn("No user ID specified in userdata or existing model, generating generic user ID.");
@@ -263,12 +264,16 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
           angular.extend(user, userdata);
 
-          console.log('Identifying user.')
+          console.log('$ionicPush: Identifying user.')
           $ionicUser.identify(user).then(function () {
             resolve(init(options));
           });
-          }
-        else {
+        } else if (!user.user_id){
+          console.log('$ionicPush: Registering anonymous user.');
+          $ionicUser.identifyAnonymous().then(function() {
+            resolve(init(options));
+          });
+        } else {
           resolve(init(options));
         }
       });
@@ -287,7 +292,6 @@ function($rootElement, $injector) {
     run: function(notification) {
       if(notification.$state) {
         // Auto navigate to state
-
         var injector = $rootElement.injector();
         if(injector.has('$state')) {
           $state = injector.get('$state');
