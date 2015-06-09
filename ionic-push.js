@@ -253,7 +253,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
           onTokenRecieved: function (token) { }
         }, options);
 
-        var user = $ionicUser.get();
+        var user = {};
 
         if (userdata) {
           if (!userdata.user_id || !user.user_id) {
@@ -268,13 +268,16 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
           $ionicUser.identify(user).then(function () {
             resolve(init(options));
           });
-        } else if (!user.user_id){
-          console.log('$ionicPush: Registering anonymous user.');
-          $ionicUser.identifyAnonymous().then(function() {
-            resolve(init(options));
-          });
         } else {
-          resolve(init(options));
+          user = $ionicUser.get();
+          if (!user.user_id){
+            console.log('$ionicPush: Registering anonymous user.');
+            $ionicUser.identifyAnonymous().then(function() {
+              resolve(init(options));
+            });
+          } else {
+            resolve(init(options));
+          }
         }
       });
     },
@@ -290,6 +293,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 function($rootElement, $injector) {
   return {
     run: function(notification) {
+      console.log(notification);
       if(notification.$state) {
         // Auto navigate to state
         var injector = $rootElement.injector();
