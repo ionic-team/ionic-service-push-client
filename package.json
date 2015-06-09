@@ -1,6 +1,6 @@
 {
   "name": "ionic-service-push",
-  "version": "0.1.5",
+  "version": "0.1.4",
   "description": "Ionic Push Component",
   "dependencies": {
     "ionic-service-core": ">=0.1.4"
