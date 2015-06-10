@@ -89,6 +89,15 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
       var checkPushes = setInterval(function(){
         $http(checkReq).success(function(resp){
           if (resp.messages.length > 0) {
+            var notification = {};
+            notification.alert = resp.messages[0];
+            console.warn("Calling onNotification() for a development push.  Payload will NOT be available");
+            var callbackRet = options.onNotification && options.onNotification(notification);
+            // If the custom handler returns false, don't handle this at all in our code
+            if(callbackRet === false) {
+              return;
+            }
+
             if (localNotifications) {
               console.log('$ionicPush: Attempting to send local notification.');
               window.cordova.plugins.notification.local.registerPermission(function (granted) {
