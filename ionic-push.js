@@ -302,7 +302,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 function($rootElement, $injector) {
   return {
     run: function(notification) {
-      var state = null;
+      var state = false;
       var stateParams = {};
       if (ionic.Platform.isAndroid()) {
         if (notification.payload.payload.$state) {
@@ -324,7 +324,7 @@ function($rootElement, $injector) {
         }
       }
 
-      if (!(state === null)) {
+      if (!state) {
         // Auto navigate to state
         var injector = $rootElement.injector();
         $state = injector.get('$state');
