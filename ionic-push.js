@@ -151,12 +151,6 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
       var callbackRet = options.onNotification && options.onNotification(notification);
 
-      // If the custom handler returns false, don't handle this at all in
-      // our code
-      if(callbackRet === false) {
-        return;
-      }
-
       if (ionic.Platform.isAndroid() && notification.event == "registered") {
         /**
          * Android handles push notification registration in a callback from the GCM service (whereas
@@ -169,6 +163,12 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
           platform: 'android'
         });
         androidInit(notification.regid);
+      }
+
+      // If the custom handler returns false, don't handle this at all in
+      // our code
+      if(callbackRet === false) {
+        return;
       }
 
       // If we have the notification plugin, show this
@@ -265,7 +265,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
         var user = {};
 
         if (userdata) {
-          if (!userdata.user_id || !user.user_id) {
+          if (!userdata.user_id) {
             // Set your user_id here, or generate a random one
             console.warn("No user ID specified in userdata or existing model, generating generic user ID.");
             user.user_id = $ionicUser.generateGUID();
@@ -273,7 +273,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
           angular.extend(user, userdata);
 
-          console.log('$ionicPush: Identifying user.')
+          console.log('$ionicPush: Identifying user', user.user_id);
           $ionicUser.identify(user).then(function () {
             resolve(init(options));
           });
@@ -305,12 +305,12 @@ function($rootElement, $injector) {
       var state = '';
       var stateParams = {};
       if (ionic.Platform.isAndroid()) {
-        if (notification.payload.$state) {
-          state = notification.payload.$state;
+        if (notification.payload.payload.$state) {
+          state = notification.payload.payload.$state;
         }
-        if (notification.payload.$stateParams) {
+        if (notification.payload.payload.$stateParams) {
           try {
-            stateParams = JSON.parse(notification.payload.$stateParams);
+            stateParams = JSON.parse(notification.payload.payload.$stateParams);
           } catch(e) {}
         }
       } else if (ionic.Platform.isIOS()) {
@@ -325,14 +325,10 @@ function($rootElement, $injector) {
       }
 
       console.log(notification);
-      if(notification.$state) {
-        // Auto navigate to state
-        var injector = $rootElement.injector();
-        if(injector.has('$state')) {
-          $state = injector.get('$state');
-          $state.go(state, stateParams);
-        }
-      }
+      // Auto navigate to state
+      var injector = $rootElement.injector();
+      $state = injector.get('$state');
+      $state.go(state, stateParams);
     }
   }
 }])
