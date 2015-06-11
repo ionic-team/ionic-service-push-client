@@ -302,7 +302,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 function($rootElement, $injector) {
   return {
     run: function(notification) {
-      var state = '';
+      var state = null;
       var stateParams = {};
       if (ionic.Platform.isAndroid()) {
         if (notification.payload.payload.$state) {
@@ -324,11 +324,12 @@ function($rootElement, $injector) {
         }
       }
 
-      console.log(notification);
-      // Auto navigate to state
-      var injector = $rootElement.injector();
-      $state = injector.get('$state');
-      $state.go(state, stateParams);
+      if (!(state === null)) {
+        // Auto navigate to state
+        var injector = $rootElement.injector();
+        $state = injector.get('$state');
+        $state.go(state, stateParams);
+      }
     }
   }
 }])
