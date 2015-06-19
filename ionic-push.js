@@ -324,7 +324,7 @@ function($rootElement, $injector) {
         }
       }
 
-      if (!state) {
+      if (state) {
         // Auto navigate to state
         var injector = $rootElement.injector();
         $state = injector.get('$state');
