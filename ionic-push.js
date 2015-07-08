@@ -332,4 +332,4 @@ function($rootElement, $injector) {
       }
     }
   }
-}])
+}]);
