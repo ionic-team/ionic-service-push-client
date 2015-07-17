@@ -9,12 +9,27 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  * }])
  *
  */
-.factory('$ionicPush', ['$http', '$cordovaPush','$cordovaLocalNotification', '$ionicApp', '$ionicPushActions', '$ionicUser', '$rootScope', '$log', '$q',
+.factory('$ionicPush', ['$http', '$cordovaPush','$cordovaLocalNotification', '$ionicApp', '$ionicPushActions', '$ionicUser', '$ionicCoreSettings', '$rootScope', '$log', '$q',
 
-function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushActions, $ionicUser, $rootScope, $log, $q) {
+function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushActions, $ionicUser, $ionicCoreSettings, $rootScope, $log, $q) {
 
   // Grab the current app
-  var app = $ionicApp.getApp();
+  var app = {}
+  if ($ionicCoreSettings.get('app_id') && $ionicCoreSettings.get('api_key')) {
+    // Get needed values form core settings
+    app.app_id = $ionicCoreSettings.get('app_id');
+    app.api_key = $ionicCoreSettings.get('api_key');
+    app.gcm_key = $ionicCoreSettings.get('gcm_key');
+    app.dev_push = $ionicCoreSettings.get('dev_push');
+
+    if (!app.gcm_key) {
+      console.warn('PUSH: Unable to get GCM project number, run "ionic config set gcm_id your-gcm-id"');
+    }
+  } else {
+    console.warn('CORE: Unable to load app ID or API key, falling back to $ionicApp.getApp()...');
+    app = $ionicApp.getApp();
+    app.gcm_key = $ionicApp.getGcmId();
+  }
 
   //Check for required credentials
   if(!app || !app.app_id) {
@@ -33,7 +48,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
     var defer = $q.defer();
 
     // TODO: This should be part of a config not a direct method
-    var gcmKey = $ionicApp.getGcmId();
+    var gcmKey = app.gcm_key;
     var api = $ionicApp.getValue('push_api_server');
 
     //Default configuration
