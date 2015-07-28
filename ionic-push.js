@@ -353,4 +353,4 @@ function($rootElement, $injector) {
       }
     }
   }
-}])
+}]);
