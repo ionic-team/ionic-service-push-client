@@ -15,6 +15,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
   // Grab the current app
   var app = {}
+  var oldApp = $ionicApp.getApp();
   if ($ionicCoreSettings.get('app_id') && $ionicCoreSettings.get('api_key')) {
     // Get needed values form core settings
     app.app_id = $ionicCoreSettings.get('app_id');
@@ -22,12 +23,17 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
     app.gcm_key = $ionicCoreSettings.get('gcm_key');
     app.dev_push = $ionicCoreSettings.get('dev_push');
 
+    // Make sure we don't overwrite their old dev_push
+    if (oldApp.dev_push === false) {
+      app.dev_push = false;
+    }
+
     if (!app.gcm_key) {
       console.warn('PUSH: Unable to get GCM project number, run "ionic config set gcm_id your-gcm-id"');
     }
   } else {
     console.warn('CORE: Unable to load app ID or API key, falling back to $ionicApp.getApp()...');
-    app = $ionicApp.getApp();
+    app = oldApp;
     app.gcm_key = $ionicApp.getGcmId();
   }
 
