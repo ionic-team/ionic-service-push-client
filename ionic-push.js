@@ -14,32 +14,24 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
 function($http, $cordovaLocalNotification, $ionicPushActions, $ionicUser, $ionicCoreSettings, $rootScope, $log, $q) {
 
   // Grab the current app
-  var app = {}
-  var oldApp = $ionicApp.getApp();
-  if ($ionicCoreSettings.get('app_id') && $ionicCoreSettings.get('api_key')) {
-    // Get needed values form core settings
-    app.app_id = $ionicCoreSettings.get('app_id');
-    app.api_key = $ionicCoreSettings.get('api_key');
-    app.gcm_key = $ionicCoreSettings.get('gcm_key');
-    app.dev_push = $ionicCoreSettings.get('dev_push');
+  var app = {
+    'app_id': $ionicCoreSettings.get('app_id'),
+    'api_key': $ionicCoreSettings.get('api_key'),
+    'dev_push': $ionicCoreSettings.get('dev_push') || false
+  };
 
-    // Make sure we don't overwrite their old dev_push
-    if (oldApp.dev_push === false) {
-      app.dev_push = false;
-    }
-
-    if (!app.gcm_key) {
-      console.warn('PUSH: Unable to get GCM project number, run "ionic config set gcm_id your-gcm-id"');
-    }
-  } else {
-    console.warn('CORE: Unable to load app ID or API key, falling back to $ionicApp.getApp()...');
-    app = oldApp;
-    app.gcm_key = $ionicApp.getGcmId();
+  if(!app.app_id || !app.api_key) {
+    console.error('Ionic Push: No app_id or api_key found. (http://docs.ionic.io/docs/io-install)');
+    return false;
   }
 
-  //Check for required credentials
-  if(!app || !app.app_id) {
-    console.error('PUSH: Unable to initialize, you must call $ionicAppProvider.identify() first');
+  if($ionicCoreSettings.get('gcm_key')) {
+    app.gcm_key = $ionicCoreSettings.get('gcm_key');
+  }
+
+  if(ionic.Platform.isAndroid() && !app.dev_push && !app.gcm_key) {
+    console.error('Ionic Push: GCM project number not found (http://docs.ionic.io/docs/push-android-setup)');
+    return false;
   }
 
   function generateDevGuid() {
