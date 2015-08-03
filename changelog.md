@@ -1,6 +1,11 @@
 Changelog
 =========
 
+## 0.2.0
+
+* Refactoring usage for new plugin update (https://github.com/phonegap/phonegap-plugin-push)
+
+
 ## 0.1.12
 
 * Updated dependencies.

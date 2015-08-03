@@ -9,9 +9,9 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  * }])
  *
  */
-.factory('$ionicPush', ['$http', '$cordovaPush','$cordovaLocalNotification', '$ionicApp', '$ionicPushActions', '$ionicUser', '$ionicCoreSettings', '$rootScope', '$log', '$q',
+.factory('$ionicPush', ['$http', '$cordovaLocalNotification', '$ionicPushActions', '$ionicUser', '$ionicCoreSettings', '$rootScope', '$log', '$q',
 
-function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushActions, $ionicUser, $ionicCoreSettings, $rootScope, $log, $q) {
+function($http, $cordovaLocalNotification, $ionicPushActions, $ionicUser, $ionicCoreSettings, $rootScope, $log, $q) {
 
   // Grab the current app
   var app = {}
