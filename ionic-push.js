@@ -1,17 +1,11 @@
 angular.module('ionic.service.push', ['ionic.service.core'])
 
 /**
- * The Ionic Push service client wrapper.
- *
- * Example:
- *
- * angular.controller(['$scope', '$ionicPush', function($scope, $ionicPush) {
- * }])
- *
+ * The Ionic Push service module.
  */
-.factory('$ionicPush', ['$window', '$http', '$ionicPushAction', '$ionicUser', '$ionicCoreSettings', '$ionicDevPush', '$rootScope', '$log', '$q',
+.factory('$ionicPush', ['$window', '$http', '$ionicPushAction', '$ionicUser', '$ionicCoreSettings', '$ionicDevPush', '$rootScope',
 
-function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ionicDevPush, $rootScope, $log, $q) {
+function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ionicDevPush, $rootScope) {
 
   // Setup the app details
   var app = {
@@ -60,7 +54,6 @@ function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ioni
     
     this._config = angular.copy(config);
 
-    this._defer = $q.defer();
 
     if(self.app.dev_push) {
       // development push is enabled when you set dev_push to true
@@ -69,7 +62,8 @@ function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ioni
     } else {
       this._plugin = PushNotification.init(config);
     }
-    return this._defer.promise;
+
+    return this;
   };
 
   IonicPush.onRegister = function(callback) {
@@ -82,6 +76,7 @@ function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ioni
     if(this._plugin) {
       this._plugin.on('registration', function(data) { self._token = data.registrationId; return callback(data); });
     }
+    return this;
   };
 
   IonicPush.onNotification = function(callback) {
@@ -101,6 +96,7 @@ function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ioni
         return callback(notification);
       });
     }
+    return this;
   };
 
   IonicPush.processNotification = function(notification) {
@@ -125,7 +121,6 @@ function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ioni
     } else {
       console.log('Ionic Push: Invalid $ionicUser object passed to $ionicPush.addToUser()');
     }
-    
   };
 
   IonicPush.onError = function(callback) {
