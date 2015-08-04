@@ -1,4 +1,4 @@
-angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
+angular.module('ionic.service.push', ['ionic.service.core'])
 
 /**
  * The Ionic Push service client wrapper.
@@ -9,30 +9,99 @@ angular.module('ionic.service.push', ['ngCordova', 'ionic.service.core'])
  * }])
  *
  */
-.factory('$ionicPush', ['$http', '$cordovaLocalNotification', '$ionicPushActions', '$ionicUser', '$ionicCoreSettings', '$rootScope', '$log', '$q',
+.factory('$ionicPush', ['$window', '$http', '$ionicPushActions', '$ionicUser', '$ionicCoreSettings', '$rootScope', '$log', '$q',
 
-function($http, $cordovaLocalNotification, $ionicPushActions, $ionicUser, $ionicCoreSettings, $rootScope, $log, $q) {
+function($window, $http, $ionicPushActions, $ionicUser, $ionicCoreSettings, $rootScope, $log, $q) {
 
-  // Grab the current app
+  // Setup the app details
   var app = {
-    'app_id': $ionicCoreSettings.get('app_id'),
+    'id': $ionicCoreSettings.get('app_id'),
     'api_key': $ionicCoreSettings.get('api_key'),
     'dev_push': $ionicCoreSettings.get('dev_push') || false
   };
-
-  if(!app.app_id || !app.api_key) {
-    console.error('Ionic Push: No app_id or api_key found. (http://docs.ionic.io/docs/io-install)');
-    return false;
-  }
 
   if($ionicCoreSettings.get('gcm_key')) {
     app.gcm_key = $ionicCoreSettings.get('gcm_key');
   }
 
-  if(ionic.Platform.isAndroid() && !app.dev_push && !app.gcm_key) {
+  // Check for the required values to use this service
+  if(!app.id || !app.api_key) {
+    console.error('Ionic Push: No app_id or api_key found. (http://docs.ionic.io/docs/io-install)');
+    return false;
+  } else if(ionic.Platform.isAndroid() && !app.dev_push && !app.gcm_key) {
     console.error('Ionic Push: GCM project number not found (http://docs.ionic.io/docs/push-android-setup)');
     return false;
   }
+
+  
+
+  var IonicPushService = function(app) {
+    this.app = app;
+  };
+  var IonicPush = IonicPushService.prototype;
+
+  IonicPush.init = function(config) {
+    var PushPlugin = this.getPlugin();
+    if(!PushPlugin) { return false; }
+    if(typeof config !== 'object') {
+      console.error('Ionic Push: $ionicPush.init() requires a valid config object.')
+      return false;
+    }
+    var self = this;
+
+    // set the gcm key
+    if(ionic.Platform.isAndroid()) {
+      if(!config.android) { config.android = {}; }
+      if(!config.android.senderId) { config.android.senderID = self.app.gcm_key; }
+    }
+    
+    this._config = angular.copy(config);
+    this._plugin = PushNotification.init(config);
+    return this;
+  };
+
+  IonicPush.onRegister = function(callback) {
+    if(!this._plugin) { return false; }
+    if(typeof callback === 'function') {
+      this._plugin.on('registration', function(data) { return callback(data); });
+    } else {
+      this._plugin.on('registration', function(data) { console.log(data); });
+    }
+  };
+
+  IonicPush.onError = function(callback) {
+    if(!this._plugin) { return false; }
+    if(typeof callback === 'function') {
+      this._plugin.on('error', function(err) { return callback(err); });
+    } else {
+      this._plugin.on('error', function(err) { 
+        console.log('Ionic Push: Unexpected error occured.');
+        console.log(err);
+      });
+    }
+  };
+
+  IonicPush.unregister = function(callback, errorCallback) {
+    if(!this._plugin) { return false; }
+    this._plugin.unregister(callback, errorCallback);
+  };
+
+  IonicPush.getPlugin = function() {
+    var PushPlugin = false;
+    try {
+      PushPlugin = $window.PushNotification;
+    } catch(e) {
+      console.log('Ionic Push: Something went wrong looking for the PushNotification plugin');
+    }
+
+    if(!PushPlugin && (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) ) {
+      console.error("PushNotification plugin is required. Have you run `ionic plugin add phonegap-plugin-push` ?");
+    }
+    return PushPlugin;
+  }
+
+  return new IonicPushService(app);
+
 
   function generateDevGuid() {
     // Some crazy bit-twiddling to generate a random guid
@@ -345,4 +414,8 @@ function($rootElement, $injector) {
       }
     }
   }
+}])
+
+.factory('$ionicDevPush'), ['$http', function($http) {
+  // setup dev push
 }]);
