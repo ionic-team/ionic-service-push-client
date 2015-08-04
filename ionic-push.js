@@ -29,7 +29,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
     }
 
     if (!app.gcm_key) {
-      console.warn('PUSH: Unable to get GCM project number, run "ionic config set gcm_id your-gcm-id"');
+      console.warn('PUSH: Unable to get GCM project number, run "ionic config set gcm_key your-gcm-id"');
     }
   } else {
     console.warn('CORE: Unable to load app ID or API key, falling back to $ionicApp.getApp()...');
