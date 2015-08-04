@@ -9,9 +9,9 @@ angular.module('ionic.service.push', ['ionic.service.core'])
  * }])
  *
  */
-.factory('$ionicPush', ['$window', '$http', '$ionicPushActions', '$ionicUser', '$ionicCoreSettings', '$rootScope', '$log', '$q',
+.factory('$ionicPush', ['$window', '$http', '$ionicPushActions', '$ionicUser', '$ionicCoreSettings', '$ionicDevPush', '$rootScope', '$log', '$q',
 
-function($window, $http, $ionicPushActions, $ionicUser, $ionicCoreSettings, $rootScope, $log, $q) {
+function($window, $http, $ionicPushActions, $ionicUser, $ionicCoreSettings, $ionicDevPush, $rootScope, $log, $q) {
 
   // Setup the app details
   var app = {
@@ -33,10 +33,10 @@ function($window, $http, $ionicPushActions, $ionicUser, $ionicCoreSettings, $roo
     return false;
   }
 
-  
-
   var IonicPushService = function(app) {
     this.app = app;
+    this.registerCallback = false;
+    this._defer = false;
   };
   var IonicPush = IonicPushService.prototype;
 
@@ -56,13 +56,21 @@ function($window, $http, $ionicPushActions, $ionicUser, $ionicCoreSettings, $roo
     }
     
     this._config = angular.copy(config);
-    this._plugin = PushNotification.init(config);
-    return this;
+
+    this._defer = $q.defer();
+
+    if(self.app.dev_push) {
+      $ionicDevPush.register(this._defer);
+    } else {
+      this._plugin = PushNotification.init(config);
+    }
+    return this._defer.promise;
   };
 
   IonicPush.onRegister = function(callback) {
     if(!this._plugin) { return false; }
     if(typeof callback === 'function') {
+      this.registerCallback = callback;
       this._plugin.on('registration', function(data) { return callback(data); });
     } else {
       this._plugin.on('registration', function(data) { console.log(data); });
@@ -103,14 +111,6 @@ function($window, $http, $ionicPushActions, $ionicUser, $ionicCoreSettings, $roo
   return new IonicPushService(app);
 
 
-  function generateDevGuid() {
-    // Some crazy bit-twiddling to generate a random guid
-    return 'DEV-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-      return v.toString(16);
-    });
-  }
-
   function init(options) {
     var defer = $q.defer();
 
@@ -126,83 +126,10 @@ function($window, $http, $ionicPushActions, $ionicUser, $ionicCoreSettings, $roo
       "alert": true
     };
 
-    /**
-     * For testing push notifications, set the dev_push flag in your config to true.
-     **/
     if (app.dev_push) {
-      var localNotifications = false;
-      // If they have the local notification plugin, let them receive notifications with it, otherwise just do alerts
-      if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
-        localNotifications = true;
-      }
-
-      var devToken = generateDevGuid();
-      var devHost = api + '/dev/push';
-
-      var req = {
-        method: 'POST',
-        url: devHost,
-        data: {
-          "dev_token": devToken
-        }
-      };
-
-      $http(req).success(function(resp){
-          console.log('$ionicPush:REGISTERED_DEV_MODE', devToken);
-          $rootScope.$emit('$cordovaPush:tokenReceived', {
-            token: devToken,
-            platform: 'none'
-          });
-          defer.resolve(devToken);
-        }).error(function(error){
-          console.log("$ionicPush: Error connecting dev_push service ", error);
-        });
-
-      var checkReq = {
-        method: 'GET',
-        url: devHost + '/check',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Ionic-Dev-Token': devToken
-        }
-      };
-
-      // Check for new dev pushes every 5 seconds
-      var checkPushes = setInterval(function(){
-        $http(checkReq).success(function(resp){
-          if (resp.messages.length > 0) {
-            var notification = {};
-            notification.alert = resp.messages[0];
-            console.warn("Calling onNotification() for a development push.  Payload will NOT be available");
-            var callbackRet = options.onNotification && options.onNotification(notification);
-            // If the custom handler returns false, don't handle this at all in our code
-            if(callbackRet === false) {
-              return;
-            }
-
-            if (localNotifications) {
-              console.log('$ionicPush: Attempting to send local notification.');
-              window.cordova.plugins.notification.local.registerPermission(function (granted) {
-                if (granted) {
-                  window.cordova.plugins.notification.local.schedule({
-                    title: 'DEVELOPMENT PUSH',
-                    text: resp.messages[0]
-                  });
-                }
-              });
-            } else {
-              console.log('$ionicPush: No device, sending alert instead.');
-              alert(resp.messages[0]);
-            }
-          }
-        }).error(function(error){
-          console.log("$ionicPush: Error checking for dev pushes ", error);
-        });
-      }, 5000);
-
-    /**
-     * It's a notmal push, do normal push things
-     */
+      // development push is enabled when you set dev_push to true
+      // ionic config set dev_push true
+      $ionicDevPush.register(defer);
     } else {
       $cordovaPush.register(config).then(function(token) {
         console.log('$ionicPush:REGISTERED', token);
@@ -416,6 +343,128 @@ function($rootElement, $injector) {
   }
 }])
 
-.factory('$ionicDevPush'), ['$http', function($http) {
-  // setup dev push
+.factory('$ionicDevPush', ['$rootScope', '$http', '$ionicApp', function($rootScope, $http, $ionicApp) {
+
+  var IonicDevPushService = function(){
+    this._service_host = $ionicApp.getValue('push_api_server'),
+    this._localNotifications = false;
+    this._token = false;
+    this._watch = false;
+
+    // If they have the local notification plugin, let them receive notifications with it, otherwise just do alerts
+    if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
+      this._localNotifications = true;
+    }
+  };
+  var IonicDevPush = IonicDevPushService.prototype;
+
+
+  IonicDevPush.getDevToken = function() {
+    // Some crazy bit-twiddling to generate a random guid
+    var token = 'DEV-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+      return v.toString(16);
+    });
+    this._token = token;
+    return this._token;
+  };
+
+
+  IonicDevPush.register = function(defer) {
+    var url = this._service_host + '/dev/push';
+    var token = this._token;
+    var self = this;
+    if(!token) {
+      token = this.getDevToken();
+    }
+
+    var req = {
+      method: 'POST',
+      url: url,
+      data: {
+        "dev_token": token
+      }
+    };
+
+    $http(req).success(function(resp) {
+      console.log('Ionic Push: Registered with development push service', token);
+      $rootScope.$emit('$ionicPush:tokenReceived', {
+        token: token,
+        platform: 'none'
+      });
+      self.watch();
+      defer.resolve(token);
+    }).error(function(error){
+      console.log("Ionic Push: Error connecting development push service.", error);
+    });
+  };
+
+  IonicDevPush.checkForNotifications = function() {
+    if(!this._token) {
+      return false;
+    }
+
+    var self = this;
+    var url = this._service_host + '/dev/push/check';
+    var checkReq = {
+      method: 'GET',
+      url: url,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Ionic-Dev-Token': this._token
+      }
+    }; 
+
+    $http(checkReq).success(function(resp){
+      if (resp.messages.length > 0) {
+        var notification = {
+          'alert': resp.messages[0],
+          'title': 'DEVELOPMENT PUSH'
+        };
+        
+        console.warn("Ionic Push: Development Push received. Development pushes will not contain payload data.");
+
+        var callbackRet = self.registerCallback && self.registerCallback(notification);
+        // If the custom handler returns false, don't handle this at all in our code
+        if(callbackRet === false) {
+          return;
+        }
+
+        if (this._localNotifications) {
+          console.log('Ionic Push: Attempting to queue local notification.');
+          window.cordova.plugins.notification.local.registerPermission(function (granted) {
+            if (granted) {
+              window.cordova.plugins.notification.local.schedule({
+                title: notification.title,
+                text: notification.alert
+              });
+            }
+          });
+        } else {
+          console.log('Ionic Push: No localNotification plugin available, using alert()');
+          alert(notification.alert);
+        }
+      }
+    }).error(function(error){
+      console.log("Ionic Push: Unable to check for development pushes.", error);
+    });
+  };
+
+  IonicDevPush.watch = function() {
+    // Check for new dev pushes every 5 seconds
+    console.log('Ionic Push: Watching for new notifications');
+    var self = this;
+    if(!this._watch) {
+      this._watch = setInterval(function() { self.checkForNotifications() }, 5000);
+    }
+  };
+
+  IonicDevPush.halt = function() {
+    if(this._watch) {
+      clearInterval(this._watch);
+    }
+  };
+
+  return new IonicDevPushService();
+
 }]);
