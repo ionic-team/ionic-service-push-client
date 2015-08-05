@@ -31,72 +31,66 @@ function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ioni
     this.app = app;
     this.registerCallback = false;
     this.notificationCallback = false;
-    this._defer = false;
+    this.errorCallback = false;
     this._token = false;
     this._notification = false;
+    this._debug = false;
   };
   var IonicPush = IonicPushService.prototype;
 
   IonicPush.init = function(config) {
     var PushPlugin = this.getPlugin();
     if(!PushPlugin) { return false; }
+    if(typeof config === 'undefined') {
+      conig = {};
+    }
     if(typeof config !== 'object') {
       console.error('Ionic Push: $ionicPush.init() requires a valid config object.')
       return false;
     }
     var self = this;
 
-    // set the gcm key
+    // setup the gcm key
     if(ionic.Platform.isAndroid()) {
-      if(!config.android) { config.android = {}; }
-      if(!config.android.senderId) { config.android.senderID = self.app.gcm_key; }
+      if(!config.pluginConfig) { config.pluginConfig = {}; }
+      if(!config.pluginConfig.android) { config.pluginConfig.android = {}; }
+      if(!config.pluginConfig.android.senderId) { config.pluginConfig.android.senderID = self.app.gcm_key; }
     }
-    
+
+    // Store Callbacks
+    if(config.onRegister) { this.setRegisterCallback(config.onRegister); }
+    if(config.onNotification) { this.setNotificationCallback(config.onNotification); }
+    if(config.onError) { this.setErrorCallback(config.onError); }
+
     this._config = angular.copy(config);
-
-
-    if(self.app.dev_push) {
-      // development push is enabled when you set dev_push to true
-      // ionic config set dev_push true
-      $ionicDevPush.init(this, this._defer);
-    } else {
-      this._plugin = PushNotification.init(config);
-    }
-
     return this;
   };
 
-  IonicPush.onRegister = function(callback) {
-    var self = this;
+  IonicPush.setRegisterCallback = function(callback) {
     if(typeof callback !== 'function') {
-      callback = function(data) { console.log(data); };
+      console.log('Ionic Push: setRegisterCallback() requires a valid callback function');
+      return false;
     }
-
     this.registerCallback = callback;
-    if(this._plugin) {
-      this._plugin.on('registration', function(data) { self._token = data.registrationId; return callback(data); });
-    }
-    return this;
+    return true;
   };
 
-  IonicPush.onNotification = function(callback) {
-    var self = this;
+  IonicPush.setNotificationCallback = function(callback) {
     if(typeof callback !== 'function') {
-      callback = function(notification) { 
-        self.processNotification(notification);
-        console.log(notification);
-        return true;
-      };
+      console.log('Ionic Push: setNotificationCallback() requires a valid callback function');
+      return false;
     }
-
     this.notificationCallback = callback;
-    if(this._plugin) {
-      this._plugin.on('notification', function(notification) {
-        self.processNotification(notification);
-        return callback(notification);
-      });
+    return true;
+  };
+
+  IonicPush.setErrorCallback = function(callback) {
+    if(typeof callback !== 'function') {
+      console.log('Ionic Push: setErrorCallback() requires a valid callback function');
+      return false;
     }
-    return this;
+    this.errorCallback = callback;
+    return true;
   };
 
   IonicPush.processNotification = function(notification) {
@@ -123,14 +117,51 @@ function($window, $http, $ionicPushAction, $ionicUser, $ionicCoreSettings, $ioni
     }
   };
 
-  IonicPush.onError = function(callback) {
-    if(!this._plugin) { return false; }
-    if(typeof callback === 'function') {
-      this._plugin.on('error', function(err) { return callback(err); });
+  IonicPush.register = function() {
+    var self = this;
+    if(this.app.dev_push) {
+      // development push is enabled when you set dev_push to true
+      // ionic config set dev_push true
+      $ionicDevPush.init(this);
     } else {
-      this._plugin.on('error', function(err) { 
-        console.log('Ionic Push: Unexpected error occured.');
-        console.log(err);
+      this._plugin = PushNotification.init(self._config.pluginConfig);
+      
+
+      if(this._config.debug) {
+        this._plugin.on('registration', function(data) {
+          self._token = data.registrationId;
+          console.log('[DEBUG] Ionic Push: Device token registered', self._token);
+        });
+
+        this._plugin.on('notification', function(notification) {
+          self.processNotification(notification);
+          console.log('[DEBUG] Ionic Push: Notification Received', self._notification);
+        });
+
+        this._plugin.on('error', function(err) {
+          console.log('Ionic Push: Unexpected error occured.');
+          console.log(err);
+        });
+      }
+      
+      this._plugin.on('registration', function(data) {
+        self._token = data.registrationId;
+        if(self.registerCallback) {
+          return self.registerCallback(data);
+        }
+      });
+
+      this._plugin.on('notification', function(notification) {
+        self.processNotification(notification);
+        if(self.notificationCallback) {
+          return self.notificationCallback(notification);
+        }
+      });
+
+      this._plugin.on('error', function(e) {
+        if(self.errorCallback) {
+          return self.errorCallback();
+        }
       });
     }
   };
