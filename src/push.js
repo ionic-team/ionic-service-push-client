@@ -54,6 +54,7 @@
         this._token = false;
         this._notification = false;
         this._debug = false;
+        this._isReady = false;
       };
       var IonicPush = IonicPushService.prototype;
 
@@ -94,6 +95,9 @@
         if(config.onError) { this.setErrorCallback(config.onError); }
 
         this._config = angular.copy(config);
+        this._isReady = true;
+
+        $rootScope.$emit('$ionicPush:ready', { config: this._config });
         return this;
       };
 
@@ -285,7 +289,22 @@
         return PushPlugin;
       };
 
-      return new IonicPushService(app);
+      if(!$rootScope.$ionicPush) {
+        $rootScope.$__ionicPush = new IonicPushService(app);
+      }
+
+      IonicPush.onReady = function(callback) {
+        var self = this;
+        if(this._isReady) {
+          callback(self);
+        } else {
+          $rootScope.$on('$ionicPush:ready', function(data) {
+            callback(self);
+          });
+        }
+      };
+
+      return $rootScope.$__ionicPush;
 
   }]);
 
