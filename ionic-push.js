@@ -61,6 +61,8 @@
         this._notification = false;
         this._debug = false;
         this._isReady = false;
+        this._tokenReady = false;
+        this._blockRegistration = false;
       };
       var IonicPush = IonicPushService.prototype;
 
@@ -118,9 +120,9 @@
         }
         if(typeof user === 'object') {
           if(ionic.Platform.isAndroid()) {
-            $ionicUser.push('_push.android_tokens', this._token, true);
+            user.addPushToken(this._token, 'android');
           } else if(ionic.Platform.isIOS()) {
-            $ionicUser.push('_push.ios_tokens', this._token, true);
+            user.addPushToken(this._token, 'ios');
           } else {
             console.log('Ionic Push: Token is not a valid Android or iOS registration id. Cannot save to user.');
           }
@@ -134,13 +136,29 @@
        * Fires off the 'onRegister' callback if one has been provided in the init() config
        */
       IonicPush.register = function() {
-        if(this.app.dev_push) {
-          $ionicDevPush.init(this);
-        } else {
-          this._plugin = PushNotification.init(this._config.pluginConfig);
-          this._debugCallbackRegistration();
-          this._callbackRegistration();
+        var self = this;
+        if(this._blockRegistration) {
+          console.log("Ionic Push: Another registration is already in progress.");
+          return false;
         }
+        this._blockRegistration = true;
+        this.onReady(function() {
+          if(self.app.dev_push) {
+            $ionicDevPush.init(self);
+            this._blockRegistration = false;
+            self._tokenReady = true;
+          } else {
+            self._plugin = PushNotification.init(self._config.pluginConfig);
+            self._plugin.on('registration', function(data) {
+              self._blockRegistration = false;
+              self._token = data.registrationId;
+              self._tokenReady = true;
+              $rootScope.$emit("$ionicPush:tokenReceived", { "token": data.registrationId });
+            });
+            self._debugCallbackRegistration();
+            self._callbackRegistration();
+          }
+        });
       };
 
       /**
@@ -216,6 +234,7 @@
        * Internal Method
        */
       IonicPush._debugCallbackRegistration = function() {
+        var self = this;
         if(this._config.debug) {
           this._plugin.on('registration', function(data) {
             self._token = data.registrationId;
@@ -304,8 +323,19 @@
         if(this._isReady) {
           callback(self);
         } else {
-          $rootScope.$on('$ionicPush:ready', function(data) {
+          $rootScope.$on('$ionicPush:ready', function(event, data) {
             callback(self);
+          });
+        }
+      };
+
+      IonicPush.onToken = function(callback) {
+        var self = this;
+        if(self._tokenReady) {
+          callback({ 'token': self._token });
+        } else {
+          $rootScope.$on('$ionicPush:tokenReceived', function(event, data) {
+            callback({ 'token': data.token });
           });
         }
       };
@@ -396,6 +426,7 @@
 
       $http(req).success(function(resp) {
         console.log('Ionic Push: Registered with development push service', token);
+        $rootScope.$emit("$ionicPush:tokenReceived", { "token": token });
         if(self.registerCallback) {
           self.registerCallback({
             registrationId: token

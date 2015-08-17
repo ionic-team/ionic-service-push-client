@@ -78,6 +78,7 @@
 
       $http(req).success(function(resp) {
         console.log('Ionic Push: Registered with development push service', token);
+        $rootScope.$emit("$ionicPush:tokenReceived", { "token": token });
         if(self.registerCallback) {
           self.registerCallback({
             registrationId: token

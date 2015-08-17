@@ -4,6 +4,7 @@ Changelog
 ## 0.2.0
 
 * Refactoring usage for new plugin update (https://github.com/phonegap/phonegap-plugin-push)
+  See the README for usage updates.
 * Added dev dependencies for builds
 
 ## 0.1.13
