@@ -8,14 +8,17 @@ Check out our [docs](http://docs.ionic.io/v1.0/docs/push-overview) for more deta
 Using the latest [Ionic CLI](https://github.com/driftyco/ionic-cli):
 
 1.  Run `ionic add ionic-service-core`
-2.  Run `ionic add ionic-service-core`
+2.  Run `ionic add ionic-service-push`
 3.  Run `ionic plugin add phonegap-plugin-push`
 
 ## Example Usage
 
 ```javascript
 
-$ionicPush.init({
+var io = ionic.io.core;
+var push = io.push;
+
+push.init({
   "debug": true,
   "onNotification": function(notification) {
     var payload = $ionicPush.getPayload(notification);
@@ -27,10 +30,10 @@ $ionicPush.init({
 });
 
 // Registers for a device token using the options passed to init()
-$ionicPush.register(successCallback, errorCallback);
+push.register(successCallback, errorCallback);
 
 // Unregister the current registered token
-$ionicPush.unregister();
+push.unregister();
 ```
 
 ## Building
