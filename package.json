@@ -3,7 +3,8 @@
   "version": "0.1.13",
   "description": "Ionic Push Component",
   "dependencies": {
-    "ionic-service-core": ">=0.1.9"
+    "babel-runtime": "^5.8.20",
+    "ionic-service-core": ">=0.2.0"
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,10 @@
   },
   "homepage": "https://github.com/driftyco/ionic-service-push-client#readme",
   "devDependencies": {
+    "babelify": "^6.2.0",
+    "browserify": "^11.0.1",
     "gulp": "^3.7.0",
+    "gulp-babel": "^5.2.0",
     "gulp-concat": "^2.2.0",
     "gulp-footer": "^1.0.4",
     "gulp-header": "^1.0.2",

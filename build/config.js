@@ -11,7 +11,12 @@ module.exports = {
 
   dist: '.',
 
-  jsFiles: ['src/push.js', 'src/dev-push.js', 'src/push-action.js'],
+  jsFiles: [
+    'src/push-token.js',
+    'src/dev-push.js',
+    'src/push.js',
+    'src/angular-integration.js'
+  ],
 
   versionData: {
     version: pkg.version

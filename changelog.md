@@ -6,6 +6,7 @@ Changelog
 * Refactoring usage for new plugin update (https://github.com/phonegap/phonegap-plugin-push)
   See the README for usage updates.
 * Added dev dependencies for builds
+* Angular is now an integration rather than a dependency
 
 ## 0.1.13
 

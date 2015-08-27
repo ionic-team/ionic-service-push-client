@@ -1,12 +1,13 @@
-(function() {
-  angular.module('ionic.service.push')
+// Add Angular integrations if Angular is available
+if((typeof angular === 'object') && angular.module) {
+  angular.module('ionic.service.push', [])
 
   /**
    * IonicPushAction Service
    * 
    * A utility service to kick off misc features as part of the Ionic Push service
    */
-  .factory('$ionicPushAction', ['$rootElement', '$injector', function($rootElement, $injector) {
+  .factory('$ionicPushAction', ['$state', function($state) {
 
     var IonicPushActionService = function(){};
     var IonicPushAction = IonicPushActionService.prototype;
@@ -26,7 +27,6 @@
     IonicPushAction.notificationNavigation = function(notification) {
       var state = false;
       var stateParams = {};
-      var injector = $rootElement.injector();
       
       try {
         state = notification.additionalData.payload.$state;
@@ -37,12 +37,37 @@
       } catch(e) {}
 
       if (state) {
-        $state = injector.get('$state');
         $state.go(state, stateParams);
       }
     };
 
     return new IonicPushActionService();
-  }]);
+  }])
 
-})();
+  .factory('$ionicPushUtil', [
+    function() {
+      return {
+        'Token': ionic.io.push.Token
+      }
+    }
+  ])
+
+  .factory('$ionicDevPush', [function() {
+    return new ionic.io.push.DevService();
+  }])
+
+  .factory('$ionicPush', [function() {
+    return ionic.io.singleton.PushService;
+  }])
+
+  .run(function($ionicPushAction) {
+
+    // This is what kicks off the state redirection when a push notificaiton has the relevant details
+    ionic.io.singleton.Events.on('ionic_push:processNotification', function(notification) {
+      if(notification.additionalData.foreground === false) {
+        $ionicPushAction.notificationNavigation(notification);
+      }
+    });
+
+  });
+}
