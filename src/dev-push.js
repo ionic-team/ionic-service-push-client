@@ -1,6 +1,6 @@
 (function() {
 
-  var ApiRequest = ionic.io.base.ApiRequest;
+  var ApiRequest = ionic.io.util.ApiRequest;
 
 
   /**
@@ -29,12 +29,13 @@
    *        in your 'onNotification' callback.
    *
    */
-  class IonicDevPushService {
+  class PushDevService {
     constructor() {
-      this._service_host = ionic.io.singleton.Settings.getURL('push'),
+      var io = ionic.io.init();
+      this._service_host = io.settings.getURL('push'),
       this._token = false;
       this._watch = false;
-      this._emitter = ionic.io.singleton.Events;
+      this._emitter = ionic.io.core.main.events;
     };
 
     /**
@@ -158,10 +159,7 @@
 
   };
 
-  if((typeof ionic == 'undefined')) { ionic = {}; }
-  if((typeof ionic.io == 'undefined')) { ionic.io = {}; }
-  if((typeof ionic.io.push == 'undefined')) { ionic.io.push = {}; }
-
-  ionic.io.push.PushDevService = IonicDevPushService;
+  ionic.io.register('push');
+  ionic.io.push.PushDevService = PushDevService;
 
 })();

@@ -20,10 +20,7 @@
     };
   };
 
-  if((typeof ionic == 'undefined')) { ionic = {}; }
-  if((typeof ionic.io == 'undefined')) { ionic.io = {}; }
-  if((typeof ionic.io.push == 'undefined')) { ionic.io.push = {}; }
-
+  ionic.io.register('push');
   ionic.io.push.Token = IonicPushToken;
 
 })();

@@ -49,14 +49,12 @@ if (typeof angular === 'object' && angular.module) {
     return {
       'Token': ionic.io.push.Token
     };
-  }]).factory('$ionicDevPush', [function () {
-    return new ionic.io.push.DevService();
   }]).factory('$ionicPush', [function () {
-    return ionic.io.singleton.PushService;
+    var io = ionic.io.init();
+    return io.push;
   }]).run(function ($ionicPushAction) {
-
     // This is what kicks off the state redirection when a push notificaiton has the relevant details
-    ionic.io.singleton.Events.on('ionic_push:processNotification', function (notification) {
+    ionic.io.core.main.events.on('ionic_push:processNotification', function (notification) {
       if (notification.additionalData.foreground === false) {
         $ionicPushAction.notificationNavigation(notification);
       }
@@ -73,7 +71,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 (function () {
 
-  var ApiRequest = ionic.io.base.ApiRequest;
+  var ApiRequest = ionic.io.util.ApiRequest;
 
   /**
    * IonicDevPush Service
@@ -102,16 +100,17 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
    *
    */
 
-  var IonicDevPushService = (function () {
-    function IonicDevPushService() {
-      _classCallCheck(this, IonicDevPushService);
+  var PushDevService = (function () {
+    function PushDevService() {
+      _classCallCheck(this, PushDevService);
 
-      this._service_host = ionic.io.singleton.Settings.getURL('push'), this._token = false;
+      var io = ionic.io.init();
+      this._service_host = io.settings.getURL('push'), this._token = false;
       this._watch = false;
-      this._emitter = ionic.io.singleton.Events;
+      this._emitter = ionic.io.core.main.events;
     }
 
-    _createClass(IonicDevPushService, [{
+    _createClass(PushDevService, [{
       key: 'getDevToken',
 
       /**
@@ -244,22 +243,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       }
     }]);
 
-    return IonicDevPushService;
+    return PushDevService;
   })();
 
   ;
 
-  if (typeof ionic == 'undefined') {
-    ionic = {};
-  }
-  if (typeof ionic.io == 'undefined') {
-    ionic.io = {};
-  }
-  if (typeof ionic.io.push == 'undefined') {
-    ionic.io.push = {};
-  }
-
-  ionic.io.push.PushDevService = IonicDevPushService;
+  ionic.io.register('push');
+  ionic.io.push.PushDevService = PushDevService;
 })();
 
 },{}],3:[function(require,module,exports){
@@ -298,16 +288,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
   ;
 
-  if (typeof ionic == 'undefined') {
-    ionic = {};
-  }
-  if (typeof ionic.io == 'undefined') {
-    ionic.io = {};
-  }
-  if (typeof ionic.io.push == 'undefined') {
-    ionic.io.push = {};
-  }
-
+  ionic.io.register('push');
   ionic.io.push.Token = IonicPushToken;
 })();
 
@@ -320,9 +301,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 (function () {
 
-  var IonicApp = ionic.io.base.App;
+  var IonicApp = ionic.io.core.App;
   var Token = ionic.io.push.Token;
-  var Settings = ionic.io.singleton.Settings;
+  var Settings = new ionic.io.core.Settings();
 
   /**
    * IonicPush Service
@@ -352,9 +333,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
    *
    */
 
-  var IonicPush = (function () {
-    function IonicPush() {
-      _classCallCheck(this, IonicPush);
+  var PushService = (function () {
+    function PushService() {
+      _classCallCheck(this, PushService);
 
       var App = new IonicApp(Settings.get('app_id'), Settings.get('api_key'));
       App.devPush = Settings.get('dev_push');
@@ -379,10 +360,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       this._isReady = false;
       this._tokenReady = false;
       this._blockRegistration = false;
-      this._emitter = ionic.io.singleton.Events;
+      this._emitter = ionic.io.core.main.events;
     }
 
-    _createClass(IonicPush, [{
+    _createClass(PushService, [{
       key: 'init',
 
       /**
@@ -694,25 +675,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       }
     }]);
 
-    return IonicPush;
+    return PushService;
   })();
 
   ;
 
-  if (typeof ionic == 'undefined') {
-    ionic = {};
-  }
-  if (typeof ionic.io == 'undefined') {
-    ionic.io = {};
-  }
-  if (typeof ionic.io.push == 'undefined') {
-    ionic.io.push = {};
-  }
-  if (typeof ionic.io.singleton == 'undefined') {
-    ionic.io.singleton = {};
-  }
-
-  ionic.io.singleton.PushService = new IonicPush();
+  ionic.io.register('push');
+  ionic.io.push.PushService = PushService;
 })();
 
 },{}]},{},[3,2,4,1]);

@@ -1,8 +1,8 @@
 (function() {
 
-  var IonicApp = ionic.io.base.App;
+  var IonicApp = ionic.io.core.App;
   var Token = ionic.io.push.Token;
-  var Settings = ionic.io.singleton.Settings;
+  var Settings = new ionic.io.core.Settings();
 
   /**
    * IonicPush Service
@@ -31,7 +31,7 @@
    *   push.unregister();
    *
    */
-  class IonicPush {
+  class PushService {
     constructor() {
 
       var App = new IonicApp(Settings.get('app_id'), Settings.get('api_key'));
@@ -57,7 +57,7 @@
       this._isReady = false;
       this._tokenReady = false;
       this._blockRegistration = false;
-      this._emitter = ionic.io.singleton.Events;
+      this._emitter = ionic.io.core.main.events;
     };
 
     /**
@@ -329,11 +329,7 @@
   };
 
 
-  if((typeof ionic == 'undefined')) { ionic = {}; }
-  if((typeof ionic.io == 'undefined')) { ionic.io = {}; }
-  if((typeof ionic.io.push == 'undefined')) { ionic.io.push = {}; }
-  if((typeof ionic.io.singleton == 'undefined')) { ionic.io.singleton = {}; }
-
-  ionic.io.singleton.PushService = new IonicPush();
+  ionic.io.register('push');
+  ionic.io.push.PushService = PushService;
 
 })();

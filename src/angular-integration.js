@@ -52,18 +52,14 @@ if((typeof angular === 'object') && angular.module) {
     }
   ])
 
-  .factory('$ionicDevPush', [function() {
-    return new ionic.io.push.DevService();
-  }])
-
   .factory('$ionicPush', [function() {
-    return ionic.io.singleton.PushService;
+    var io = ionic.io.init();
+    return io.push;
   }])
 
   .run(function($ionicPushAction) {
-
     // This is what kicks off the state redirection when a push notificaiton has the relevant details
-    ionic.io.singleton.Events.on('ionic_push:processNotification', function(notification) {
+    ionic.io.core.main.events.on('ionic_push:processNotification', function(notification) {
       if(notification.additionalData.foreground === false) {
         $ionicPushAction.notificationNavigation(notification);
       }

@@ -15,10 +15,9 @@ Using the latest [Ionic CLI](https://github.com/driftyco/ionic-cli):
 
 ```javascript
 
-var io = ionic.io.core;
-var push = io.push;
+var io = ionic.io.init();
 
-push.init({
+io.push.init({
   "debug": true,
   "onNotification": function(notification) {
     var payload = $ionicPush.getPayload(notification);
@@ -30,10 +29,10 @@ push.init({
 });
 
 // Registers for a device token using the options passed to init()
-push.register(successCallback, errorCallback);
+io.push.register(successCallback, errorCallback);
 
 // Unregister the current registered token
-push.unregister();
+io.push.unregister();
 ```
 
 ## Building
