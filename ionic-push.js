@@ -345,7 +345,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       if (!App.id || !App.apiKey) {
         console.error('Ionic Push: No app_id or api_key found. (http://docs.ionic.io/docs/io-install)');
         return false;
-      } else if (ionic.Platform.isAndroid() && !App.devPush && !App.gcmKey) {
+      } else if (ionic.io.core.main.isAndroidDevice() && !App.devPush && !App.gcmKey) {
         console.error('Ionic Push: GCM project number not found (http://docs.ionic.io/docs/push-android-setup)');
         return false;
       }
@@ -397,7 +397,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           config.pluginConfig = {};
         }
 
-        if (ionic.Platform.isAndroid()) {
+        if (ionic.io.core.main.isAndroidDevice()) {
           // inject gcm key for PushPlugin
           if (!config.pluginConfig.android) {
             config.pluginConfig.android = {};
@@ -437,9 +437,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           console.log('Ionic Push: A token must be registered before you can add it to a user.');
         }
         if (typeof user === 'object') {
-          if (ionic.Platform.isAndroid()) {
+          if (ionic.io.core.main.isAndroidDevice()) {
             user.addPushToken(this._token, 'android');
-          } else if (ionic.Platform.isIOS()) {
+          } else if (ionic.io.core.main.isIOSDevice()) {
             user.addPushToken(this._token, 'ios');
           } else {
             console.log('Ionic Push: Token is not a valid Android or iOS registration id. Cannot save to user.');
@@ -649,7 +649,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           console.log('Ionic Push: Something went wrong looking for the PushNotification plugin');
         }
 
-        if (!PushPlugin && (ionic.Platform.isIOS() || ionic.Platform.isAndroid())) {
+        if (!PushPlugin && (ionic.io.core.main.isIOSDevice() || ionic.io.core.main.isAndroidDevice())) {
           console.error("PushNotification plugin is required. Have you run `ionic plugin add phonegap-plugin-push` ?");
         }
         return PushPlugin;
