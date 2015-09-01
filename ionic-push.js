@@ -2,47 +2,65 @@
 // Add Angular integrations if Angular is available
 'use strict';
 
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
 if (typeof angular === 'object' && angular.module) {
   angular.module('ionic.service.push', [])
 
   /**
    * IonicPushAction Service
-   * 
+   *
    * A utility service to kick off misc features as part of the Ionic Push service
    */
   .factory('$ionicPushAction', ['$state', function ($state) {
-
-    var IonicPushActionService = function IonicPushActionService() {};
-    var IonicPushAction = IonicPushActionService.prototype;
-
-    /**
-     * State Navigation
-     *
-     * Attempts to navigate to a new view if a push notification payload contains:
-     *
-     *   - $state {String} The state name (e.g 'tab.chats')
-     *   - $stateParams {Object} Provided state (url) params
-     *
-     * Find more info about state navigation and params: 
-     * https://github.com/angular-ui/ui-router/wiki
-     *
-     */
-    IonicPushAction.notificationNavigation = function (notification) {
-      var state = false;
-      var stateParams = {};
-
-      try {
-        state = notification.additionalData.payload.$state;
-      } catch (e) {}
-
-      try {
-        stateParams = JSON.parse(notification.additionalData.payload.$stateParams);
-      } catch (e) {}
-
-      if (state) {
-        $state.go(state, stateParams);
+    var IonicPushActionService = (function () {
+      function IonicPushActionService() {
+        _classCallCheck(this, IonicPushActionService);
       }
-    };
+
+      _createClass(IonicPushActionService, [{
+        key: 'notificationNavigation',
+
+        /**
+         * State Navigation
+         *
+         * Attempts to navigate to a new view if a push notification payload contains:
+         *
+         *   - $state {String} The state name (e.g 'tab.chats')
+         *   - $stateParams {Object} Provided state (url) params
+         *
+         * Find more info about state navigation and params:
+         * https://github.com/angular-ui/ui-router/wiki
+         *
+         * @param {object} notification Notification Object
+         * @return {void}
+         */
+        value: function notificationNavigation(notification) {
+          var state = false;
+          var stateParams = {};
+
+          try {
+            state = notification.additionalData.payload.$state;
+          } catch (e) {
+            state = false;
+          }
+
+          try {
+            stateParams = JSON.parse(notification.additionalData.payload.$stateParams);
+          } catch (e) {
+            stateParams = {};
+          }
+
+          if (state) {
+            $state.go(state, stateParams);
+          }
+        }
+      }]);
+
+      return IonicPushActionService;
+    })();
 
     return new IonicPushActionService();
   }]).factory('$ionicPushUtil', [function () {
@@ -75,21 +93,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
   /**
    * IonicDevPush Service
-   * 
+   *
    * This service acts as a mock push service that is intended to be used pre-setup of
    * GCM/APNS in an Ionic.io project.
-   * 
+   *
    * How it works:
-   *  
+   *
    *   When register() is called, this service is used to generate a random
    *   development device token. This token is not valid for any service outside of
    *   Ionic Push with `dev_push` set to true. These tokens do not last long and are not
    *   eligible for use in a production app.
-   *   
+   *
    *   The device will then periodically check the Push service for push notifications sent
    *   to our development token -- so unlike a typical "push" update, this actually uses
    *   "polling" to find new notifications. This means you *MUST* have the application open
-   *   and in the foreground to retreive messsages. 
+   *   and in the foreground to retreive messsages.
    *
    *   The callbacks provided in your init() will still be triggered as normal,
    *   but with these notable exceptions:
@@ -105,37 +123,39 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       _classCallCheck(this, PushDevService);
 
       var io = ionic.io.init();
-      this._service_host = io.settings.getURL('push'), this._token = false;
+      this._serviceHost = io.settings.getURL('push');
+      this._token = false;
       this._watch = false;
       this._emitter = ionic.io.core.main.events;
     }
 
+    /**
+     * Generate a development token
+     *
+     * @return {String} development device token
+     */
+
     _createClass(PushDevService, [{
       key: 'getDevToken',
-
-      /**
-       * Generate a development token
-       *
-       * @return {String} development device token
-       */
       value: function getDevToken() {
         // Some crazy bit-twiddling to generate a random guid
         var token = 'DEV-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
           var r = Math.random() * 16 | 0,
-              v = c == 'x' ? r : r & 0x3 | 0x8;
+              v = c === 'x' ? r : r & 0x3 | 0x8;
           return v.toString(16);
         });
         this._token = token;
         return this._token;
       }
-    }, {
-      key: 'init',
 
       /**
        * Registers a development token with the Ionic Push service
        *
-       * @param {IonicPushService} Instantiated Push Service
+       * @param {IonicPushService} ionicPush Instantiated Push Service
+       * @return {void}
        */
+    }, {
+      key: 'init',
       value: function init(ionicPush) {
         this._push = ionicPush;
         var token = this._token;
@@ -145,23 +165,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
 
         var requestOptions = {
-          method: 'POST',
-          uri: this._service_host + '/dev/push',
+          "method": 'POST',
+          "uri": this._serviceHost + '/dev/push',
           'headers': {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
+          "body": JSON.stringify({
             "dev_token": token
           })
         };
 
-        new ApiRequest(requestOptions).then(function (result) {
+        new ApiRequest(requestOptions).then(function () {
           console.log('Ionic Push: Registered with development push service', token);
           self._emitter.emit("ionic_push:token", { "token": token });
           if (self.registerCallback) {
             self.registerCallback({
-              registrationId: token
+              "registrationId": token
             });
           }
           self.watch();
@@ -169,12 +189,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           console.log("Ionic Push: Error connecting development push service.", error);
         });
       }
-    }, {
-      key: 'checkForNotifications',
 
       /**
        * Checks the push service for notifications that target the current development token
+       * @return {void}
        */
+    }, {
+      key: 'checkForNotifications',
       value: function checkForNotifications() {
         if (!this._token) {
           return false;
@@ -183,13 +204,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         var self = this;
         var requestOptions = {
           'method': 'GET',
-          'uri': this._service_host + '/dev/push/check',
+          'uri': this._serviceHost + '/dev/push/check',
           'headers': {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'X-Ionic-Dev-Token': this._token
           },
-          json: true
+          'json': true
         };
 
         new ApiRequest(requestOptions).then(function (result) {
@@ -214,12 +235,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           console.log("Ionic Push: Unable to check for development pushes.", error);
         });
       }
-    }, {
-      key: 'watch',
 
       /**
        * Kicks off the "polling" of the Ionic Push service for new push notifications
+       * @return {void}
        */
+    }, {
+      key: 'watch',
       value: function watch() {
         // Check for new dev pushes every 5 seconds
         console.log('Ionic Push: Watching for new notifications');
@@ -230,12 +252,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           }, 5000);
         }
       }
-    }, {
-      key: 'halt',
 
       /**
        * Puts the "polling" for new notifications on hold.
+       * @return {void}
        */
+    }, {
+      key: 'halt',
       value: function halt() {
         if (this._watch) {
           clearInterval(this._watch);
@@ -245,8 +268,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     return PushDevService;
   })();
-
-  ;
 
   ionic.io.register('push');
   ionic.io.push.PushDevService = PushDevService;
@@ -286,8 +307,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     return IonicPushToken;
   })();
 
-  ;
-
   ionic.io.register('push');
   ionic.io.push.Token = IonicPushToken;
 })();
@@ -307,7 +326,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
   /**
    * IonicPush Service
-   * 
+   *
    * This is the main entrypoint for interacting with the Ionic Push service.
    * Example Usage:
    *
@@ -324,10 +343,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
    *       console.log(data);
    *     }
    *   });
-   *   
+   *
    *   // Registers for a device token using the options passed to init()
    *   push.register(callback);
-   * 
+   *
    *   // Unregister the current registered token
    *   push.unregister();
    *
@@ -363,22 +382,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       this._emitter = ionic.io.core.main.events;
     }
 
+    /**
+     * Init method to setup push behavior/options
+     *
+     * The config supports the following properties:
+     *   - debug {Boolean} Enables some extra logging as well as some default callback handlers
+     *   - onNotification {Function} Callback function that is passed the notification object
+     *   - onRegister {Function} Callback function that is passed the registration object
+     *   - onError {Function} Callback function that is passed the error object
+     *   - pluginConfig {Object} Plugin configuration: https://github.com/phonegap/phonegap-plugin-push
+     *
+     * @param {object} config Configuration object
+     * @return {PushService} returns the called PushService instantiation
+     */
+
     _createClass(PushService, [{
       key: 'init',
-
-      /**
-       * Init method to setup push behavior/options
-       *
-       * The config supports the following properties:
-       *   - debug {Boolean} Enables some extra logging as well as some default callback handlers
-       *   - onNotification {Function} Callback function that is passed the notification object
-       *   - onRegister {Function} Callback function that is passed the registration object
-       *   - onError {Function} Callback function that is passed the error object
-       *   - pluginConfig {Object} Plugin configuration: https://github.com/phonegap/phonegap-plugin-push
-       *
-       * @param {Config} Configuration data
-       * @return {IonicPushService} returns the called IonicPushService instantiation
-       */
       value: function init(config) {
         var PushPlugin = this._getPushPlugin();
         if (!PushPlugin) {
@@ -421,17 +440,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         this._config = JSON.parse(JSON.stringify(config));
         this._isReady = true;
 
-        this._emitter.emit('ionic_push:ready', { config: this._config });
+        this._emitter.emit('ionic_push:ready', { "config": this._config });
         return this;
       }
-    }, {
-      key: 'addTokenToUser',
 
       /**
        * Store the currently registered device token with a User
        *
-       * @param {IonicUser} The User the token should be associated with
+       * @param {IonicUser} user The User the token should be associated with
+       * @return {void}
        */
+    }, {
+      key: 'addTokenToUser',
       value: function addTokenToUser(user) {
         if (!this._token) {
           console.log('Ionic Push: A token must be registered before you can add it to a user.');
@@ -448,13 +468,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           console.log('Ionic Push: Invalid $ionicUser object passed to $ionicPush.addToUser()');
         }
       }
-    }, {
-      key: 'register',
 
       /**
        * Registers the device with GCM/APNS to get a device token
        * Fires off the 'onRegister' callback if one has been provided in the init() config
+       * @param {function} callback Callback Function
+       * @return {void}
        */
+    }, {
+      key: 'register',
       value: function register(callback) {
         var self = this;
         if (this._blockRegistration) {
@@ -483,29 +505,31 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           }
         });
       }
-    }, {
-      key: 'unregister',
 
       /**
        * Invalidate the current GCM/APNS token
        *
-       * @param {Function} Success Callback
-       * @param {Function} Error Callback
+       * @param {function} callback Success Callback
+       * @param {function} errorCallback Error Callback
+       * @return {mixed} plugin unregister response
        */
+    }, {
+      key: 'unregister',
       value: function unregister(callback, errorCallback) {
         if (!this._plugin) {
           return false;
         }
         return this._plugin.unregister(callback, errorCallback);
       }
-    }, {
-      key: 'getPayload',
 
       /**
        * Convenience method to grab the payload object from a notification
        *
-       * @return {Object} Payload object or an empty object
+       * @param {PushNotification} notification Push Notification object
+       * @return {object} Payload object or an empty object
        */
+    }, {
+      key: 'getPayload',
       value: function getPayload(notification) {
         var payload = {};
         if (typeof notification === 'object') {
@@ -515,14 +539,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
         return payload;
       }
-    }, {
-      key: 'setRegisterCallback',
 
       /**
        * Set the registration callback
        *
-       * @return {Boolean} true if set correctly, otherwise false
+       * @param {function} callback Registration callback function
+       * @return {boolean} true if set correctly, otherwise false
        */
+    }, {
+      key: 'setRegisterCallback',
       value: function setRegisterCallback(callback) {
         if (typeof callback !== 'function') {
           console.log('Ionic Push: setRegisterCallback() requires a valid callback function');
@@ -531,14 +556,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         this.registerCallback = callback;
         return true;
       }
-    }, {
-      key: 'setNotificationCallback',
 
       /**
        * Set the notification callback
        *
-       * @return {Boolean} true if set correctly, otherwise false
+       * @param {function} callback Notification callback function
+       * @return {boolean} true if set correctly, otherwise false
        */
+    }, {
+      key: 'setNotificationCallback',
       value: function setNotificationCallback(callback) {
         if (typeof callback !== 'function') {
           console.log('Ionic Push: setNotificationCallback() requires a valid callback function');
@@ -547,14 +573,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         this.notificationCallback = callback;
         return true;
       }
-    }, {
-      key: 'setErrorCallback',
 
       /**
        * Set the error callback
        *
-       * @return {Boolean} true if set correctly, otherwise false
+       * @param {function} callback Error callback function
+       * @return {boolean} true if set correctly, otherwise false
        */
+    }, {
+      key: 'setErrorCallback',
       value: function setErrorCallback(callback) {
         if (typeof callback !== 'function') {
           console.log('Ionic Push: setErrorCallback() requires a valid callback function');
@@ -563,13 +590,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         this.errorCallback = callback;
         return true;
       }
-    }, {
-      key: '_debugCallbackRegistration',
 
       /**
        * Registers the default debug callbacks with the PushPlugin when debug is enabled
        * Internal Method
+       * @private
+       * @return {void}
        */
+    }, {
+      key: '_debugCallbackRegistration',
       value: function _debugCallbackRegistration() {
         var self = this;
         if (this._config.debug) {
@@ -589,13 +618,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           });
         }
       }
-    }, {
-      key: '_callbackRegistration',
 
       /**
        * Registers the user supplied callbacks with the PushPlugin
        * Internal Method
+       * @return {void}
        */
+    }, {
+      key: '_callbackRegistration',
       value: function _callbackRegistration() {
         var self = this;
         this._plugin.on('registration', function (data) {
@@ -612,28 +642,27 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           }
         });
 
-        this._plugin.on('error', function (e) {
+        this._plugin.on('error', function () {
           if (self.errorCallback) {
             return self.errorCallback();
           }
         });
       }
-    }, {
-      key: '_processNotification',
 
       /**
        * Performs misc features based on the contents of a push notification
        * Internal Method
        *
        * Currently just does the payload $state redirection
-       *
+       * @param {PushNotification} notification Push Notification object
+       * @return {void}
        */
+    }, {
+      key: '_processNotification',
       value: function _processNotification(notification) {
         this._notification = notification;
         this._emitter.emit('ionic_push:processNotification', notification);
       }
-    }, {
-      key: '_getPushPlugin',
 
       /**
        * Fetch the phonegap-push-plugin interface
@@ -641,6 +670,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
        *
        * @return {PushNotification} PushNotification instance
        */
+    }, {
+      key: '_getPushPlugin',
       value: function _getPushPlugin() {
         var PushPlugin = false;
         try {
@@ -654,21 +685,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
         return PushPlugin;
       }
-    }, {
-      key: 'onReady',
 
       /**
        * Fire a callback when the PushService is ready. This will fire immediately if
        * the service has already initialized.
        *
-       * @param {Function} Callback function to fire off
+       * @param {function} callback Callback function to fire off
+       * @return {void}
        */
+    }, {
+      key: 'onReady',
       value: function onReady(callback) {
         var self = this;
         if (this._isReady) {
           callback(self);
         } else {
-          self._emitter.on('ionic_push:ready', function (event, data) {
+          self._emitter.on('ionic_push:ready', function () {
             callback(self);
           });
         }
@@ -677,8 +709,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     return PushService;
   })();
-
-  ;
 
   ionic.io.register('push');
   ionic.io.push.PushService = PushService;
