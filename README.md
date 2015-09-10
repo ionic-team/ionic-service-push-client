@@ -15,7 +15,7 @@ Using the latest [Ionic CLI](https://github.com/driftyco/ionic-cli):
 
 ```javascript
 
-var io = Ionic.io(); // Initialize the Ionic Platform
+Ionic.io(); // Initialize the Ionic Platform
 
 // Initialize the Push Service
 var push = Ionic.Push({
@@ -30,10 +30,10 @@ var push = Ionic.Push({
 });
 
 // Registers for a device token using the options passed to init()
-io.push.register(successCallback, errorCallback);
+push.register(successCallback, errorCallback);
 
 // Unregister the current registered token
-io.push.unregister();
+push.unregister();
 ```
 
 ## Building
