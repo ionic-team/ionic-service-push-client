@@ -15,9 +15,10 @@ Using the latest [Ionic CLI](https://github.com/driftyco/ionic-cli):
 
 ```javascript
 
-var io = ionic.io.init();
+var io = Ionic.io(); // Initialize the Ionic Platform
 
-io.push.init({
+// Initialize the Push Service
+var push = Ionic.Push({
   "debug": true,
   "onNotification": function(notification) {
     var payload = $ionicPush.getPayload(notification);
