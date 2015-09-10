@@ -7,6 +7,9 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 if (typeof angular === 'object' && angular.module) {
+
+  var IonicAngularPush = null;
+
   angular.module('ionic.service.push', [])
 
   /**
@@ -64,7 +67,10 @@ if (typeof angular === 'object' && angular.module) {
 
     return new PushActionService();
   }]).factory('$ionicPush', [function () {
-    return Ionic.Push;
+    if (!IonicAngularPush) {
+      IonicAngularPush = new Ionic.Push("DEFER_INIT");
+    }
+    return IonicAngularPush;
   }]).run(function ($ionicPushAction) {
     // This is what kicks off the state redirection when a push notificaiton has the relevant details
     Ionic.IO.Core.getEmitter().on('ionic_push:processNotification', function (notification) {
@@ -321,6 +327,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
   var Settings = new Ionic.IO.Settings();
   var Core = Ionic.IO.Core;
 
+  var DEFER_INIT = "DEFER_INIT";
+
   /**
    * Push Service
    *
@@ -379,7 +387,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       this._tokenReady = false;
       this._blockRegistration = false;
       this._emitter = Core.getEmitter();
-      this.init(config);
+      if (config !== DEFER_INIT) {
+        this.init(config);
+      }
     }
 
     /**

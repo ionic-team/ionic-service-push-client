@@ -5,6 +5,8 @@
   var Settings = new Ionic.IO.Settings();
   var Core = Ionic.IO.Core;
 
+  var DEFER_INIT = "DEFER_INIT";
+
   /**
    * Push Service
    *
@@ -62,7 +64,9 @@
       this._tokenReady = false;
       this._blockRegistration = false;
       this._emitter = Core.getEmitter();
-      this.init(config);
+      if (config !== DEFER_INIT) {
+        this.init(config);
+      }
     }
 
     /**

@@ -1,5 +1,8 @@
 // Add Angular integrations if Angular is available
 if ((typeof angular === 'object') && angular.module) {
+
+  var IonicAngularPush = null;
+
   angular.module('ionic.service.push', [])
 
   /**
@@ -51,7 +54,10 @@ if ((typeof angular === 'object') && angular.module) {
   }])
 
   .factory('$ionicPush', [function() {
-    return Ionic.Push;
+    if (!IonicAngularPush) {
+      IonicAngularPush = new Ionic.Push("DEFER_INIT");
+    }
+    return IonicAngularPush;
   }])
 
   .run(function($ionicPushAction) {
