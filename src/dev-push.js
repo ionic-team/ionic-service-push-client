@@ -31,10 +31,9 @@
    */
   class PushDevService {
     constructor() {
-      var io = Ionic.io();
       this.logger = new Ionic.IO.Logger({
         'prefix': 'Ionic Push (dev):'
-      })
+      });
       this._serviceHost = Settings.getURL('push');
       this._token = false;
       this._watch = false;

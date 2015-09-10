@@ -3,6 +3,7 @@
   var IonicApp = Ionic.IO.App;
   var Token = Ionic.PushToken;
   var Settings = new Ionic.IO.Settings();
+  var Core = Ionic.IO.Core;
 
   /**
    * Push Service
@@ -45,7 +46,7 @@
       if (!App.id || !App.apiKey) {
         this.logger.error('no app_id or api_key found. (http://docs.ionic.io/docs/io-install)');
         return false;
-      } else if (ionic.io.core.main.isAndroidDevice() && !App.devPush && !App.gcmKey) {
+      } else if (Core.isAndroidDevice() && !App.devPush && !App.gcmKey) {
         this.logger.error('GCM project number not found (http://docs.ionic.io/docs/push-android-setup)');
         return false;
       }
@@ -60,7 +61,7 @@
       this._isReady = false;
       this._tokenReady = false;
       this._blockRegistration = false;
-      this._emitter = ionic.io.core.main.events;
+      this._emitter = Core.getEmitter();
       this.init(config);
     }
 
@@ -89,7 +90,7 @@
 
       if (!config.pluginConfig) { config.pluginConfig = {}; }
 
-      if (ionic.io.core.main.isAndroidDevice()) {
+      if (Core.isAndroidDevice()) {
         // inject gcm key for PushPlugin
         if (!config.pluginConfig.android) { config.pluginConfig.android = {}; }
         if (!config.pluginConfig.android.senderId) { config.pluginConfig.android.senderID = self.app.gcmKey; }
@@ -118,9 +119,9 @@
         this.logger.info('a token must be registered before you can add it to a user.');
       }
       if (typeof user === 'object') {
-        if (ionic.io.core.main.isAndroidDevice()) {
+        if (Core.isAndroidDevice()) {
           user.addPushToken(this._token, 'android');
-        } else if (ionic.io.core.main.isIOSDevice()) {
+        } else if (Core.isIOSDevice()) {
           user.addPushToken(this._token, 'ios');
         } else {
           this.logger.info('token is not a valid Android or iOS registration id. Cannot save to user.');
@@ -145,7 +146,7 @@
       this._blockRegistration = true;
       this.onReady(function() {
         if (self.app.devPush) {
-          var IonicDevPush = new ionic.io.push.PushDevService();
+          var IonicDevPush = new Ionic.PushDevService();
           IonicDevPush.init(self);
           self._blockRegistration = false;
           self._tokenReady = true;
@@ -319,7 +320,7 @@
         this.logger.info('something went wrong looking for the PushNotification plugin');
       }
 
-      if (!PushPlugin && (ionic.io.core.main.isIOSDevice() || ionic.io.core.main.isAndroidDevice()) ) {
+      if (!PushPlugin && (Core.isIOSDevice() || Core.isAndroidDevice()) ) {
         self.logger.error("PushNotification plugin is required. Have you run `ionic plugin add phonegap-plugin-push` ?");
       }
       return PushPlugin;
