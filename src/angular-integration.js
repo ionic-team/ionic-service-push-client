@@ -9,7 +9,7 @@ if ((typeof angular === 'object') && angular.module) {
    */
   .factory('$ionicPushAction', ['$state', function($state) {
 
-    class IonicPushActionService {
+    class PushActionService {
 
       /**
        * State Navigation
@@ -47,25 +47,16 @@ if ((typeof angular === 'object') && angular.module) {
       }
     }
 
-    return new IonicPushActionService();
+    return new PushActionService();
   }])
 
-  .factory('$ionicPushUtil', [
-    function() {
-      return {
-        'Token': ionic.io.push.Token
-      };
-    }
-  ])
-
   .factory('$ionicPush', [function() {
-    var io = ionic.io.init();
-    return io.push;
+    return Ionic.Push;
   }])
 
   .run(function($ionicPushAction) {
     // This is what kicks off the state redirection when a push notificaiton has the relevant details
-    ionic.io.core.main.events.on('ionic_push:processNotification', function(notification) {
+    Ionic.IO.Core.getEmitter().on('ionic_push:processNotification', function(notification) {
       if (notification.additionalData.foreground === false) {
         $ionicPushAction.notificationNavigation(notification);
       }

@@ -1,19 +1,17 @@
 (function() {
 
-  var IonicApp = ionic.io.core.App;
-  var Token = ionic.io.push.Token;
-  var Settings = new ionic.io.core.Settings();
+  var IonicApp = Ionic.IO.App;
+  var Token = Ionic.PushToken;
+  var Settings = new Ionic.IO.Settings();
 
   /**
-   * IonicPush Service
+   * Push Service
    *
    * This is the main entrypoint for interacting with the Ionic Push service.
    * Example Usage:
    *
-   *   var io = ionic.io.core;
-   *   var push = io.push;
-   *
-   *   push.init({
+   *   Ionic.io(); // kick off the io platform
+   *   var push = new Ionic.Push({
    *     "debug": true,
    *     "onNotification": function(notification) {
    *       var payload = $ionicPush.getPayload(notification);
@@ -31,8 +29,13 @@
    *   push.unregister();
    *
    */
-  class PushService {
-    constructor() {
+  class Push {
+
+    constructor(config) {
+
+      this.logger = new Ionic.IO.Logger({
+        'prefix': 'Ionic Push:'
+      });
 
       var App = new IonicApp(Settings.get('app_id'), Settings.get('api_key'));
       App.devPush = Settings.get('dev_push');
@@ -40,10 +43,10 @@
 
       // Check for the required values to use this service
       if (!App.id || !App.apiKey) {
-        console.error('Ionic Push: No app_id or api_key found. (http://docs.ionic.io/docs/io-install)');
+        this.logger.error('no app_id or api_key found. (http://docs.ionic.io/docs/io-install)');
         return false;
       } else if (ionic.io.core.main.isAndroidDevice() && !App.devPush && !App.gcmKey) {
-        console.error('Ionic Push: GCM project number not found (http://docs.ionic.io/docs/push-android-setup)');
+        this.logger.error('GCM project number not found (http://docs.ionic.io/docs/push-android-setup)');
         return false;
       }
 
@@ -58,6 +61,7 @@
       this._tokenReady = false;
       this._blockRegistration = false;
       this._emitter = ionic.io.core.main.events;
+      this.init(config);
     }
 
     /**
@@ -71,14 +75,14 @@
      *   - pluginConfig {Object} Plugin configuration: https://github.com/phonegap/phonegap-plugin-push
      *
      * @param {object} config Configuration object
-     * @return {PushService} returns the called PushService instantiation
+     * @return {Push} returns the called Push instantiation
      */
     init(config) {
       var PushPlugin = this._getPushPlugin();
       if (!PushPlugin) { return false; }
       if (typeof config === 'undefined') { config = {}; }
       if (typeof config !== 'object') {
-        console.error('Ionic Push: init() requires a valid config object.');
+        this.logger.error('init() requires a valid config object.');
         return false;
       }
       var self = this;
@@ -111,7 +115,7 @@
      */
     addTokenToUser(user) {
       if (!this._token) {
-        console.log('Ionic Push: A token must be registered before you can add it to a user.');
+        this.logger.info('a token must be registered before you can add it to a user.');
       }
       if (typeof user === 'object') {
         if (ionic.io.core.main.isAndroidDevice()) {
@@ -119,10 +123,10 @@
         } else if (ionic.io.core.main.isIOSDevice()) {
           user.addPushToken(this._token, 'ios');
         } else {
-          console.log('Ionic Push: Token is not a valid Android or iOS registration id. Cannot save to user.');
+          this.logger.info('token is not a valid Android or iOS registration id. Cannot save to user.');
         }
       } else {
-        console.log('Ionic Push: Invalid $ionicUser object passed to $ionicPush.addToUser()');
+        this.logger.info('invalid $ionicUser object passed to $ionicPush.addToUser()');
       }
     }
 
@@ -135,7 +139,7 @@
     register(callback) {
       var self = this;
       if (this._blockRegistration) {
-        console.log("Ionic Push: Another registration is already in progress.");
+        self.logger.info("another registration is already in progress.");
         return false;
       }
       this._blockRegistration = true;
@@ -197,7 +201,7 @@
      */
     setRegisterCallback(callback) {
       if (typeof callback !== 'function') {
-        console.log('Ionic Push: setRegisterCallback() requires a valid callback function');
+        this.logger.info('setRegisterCallback() requires a valid callback function');
         return false;
       }
       this.registerCallback = callback;
@@ -212,7 +216,7 @@
      */
     setNotificationCallback(callback) {
       if (typeof callback !== 'function') {
-        console.log('Ionic Push: setNotificationCallback() requires a valid callback function');
+        this.logger.info('setNotificationCallback() requires a valid callback function');
         return false;
       }
       this.notificationCallback = callback;
@@ -227,7 +231,7 @@
      */
     setErrorCallback(callback) {
       if (typeof callback !== 'function') {
-        console.log('Ionic Push: setErrorCallback() requires a valid callback function');
+        this.logger.info('setErrorCallback() requires a valid callback function');
         return false;
       }
       this.errorCallback = callback;
@@ -245,17 +249,17 @@
       if (this._config.debug) {
         this._plugin.on('registration', function(data) {
           self._token = new Token(data.registrationId);
-          console.log('[DEBUG] Ionic Push: Device token registered', self._token);
+          self.logger.info('device token registered', self._token);
         });
 
         this._plugin.on('notification', function(notification) {
           self._processNotification(notification);
-          console.log('[DEBUG] Ionic Push: Notification Received', self._notification);
+          self.logger.info('notification received', self._notification);
         });
 
         this._plugin.on('error', function(err) {
-          console.log('[DEBUG] Ionic Push: Unexpected error occured.');
-          console.log(err);
+          self.logger.error('unexpected error occured.');
+          self.logger.error(err);
         });
       }
     }
@@ -312,17 +316,17 @@
       try {
         PushPlugin = window.PushNotification;
       } catch(e) {
-        console.log('Ionic Push: Something went wrong looking for the PushNotification plugin');
+        this.logger.info('something went wrong looking for the PushNotification plugin');
       }
 
       if (!PushPlugin && (ionic.io.core.main.isIOSDevice() || ionic.io.core.main.isAndroidDevice()) ) {
-        console.error("PushNotification plugin is required. Have you run `ionic plugin add phonegap-plugin-push` ?");
+        self.logger.error("PushNotification plugin is required. Have you run `ionic plugin add phonegap-plugin-push` ?");
       }
       return PushPlugin;
     }
 
     /**
-     * Fire a callback when the PushService is ready. This will fire immediately if
+     * Fire a callback when Push is ready. This will fire immediately if
      * the service has already initialized.
      *
      * @param {function} callback Callback function to fire off
@@ -341,8 +345,6 @@
 
   }
 
-
-  ionic.io.register('push');
-  ionic.io.push.PushService = PushService;
+  Ionic.namespace('Ionic', 'Push', Push, window);
 
 })();

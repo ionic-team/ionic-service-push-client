@@ -1,9 +1,10 @@
 (function() {
 
-  var ApiRequest = ionic.io.util.ApiRequest;
+  var ApiRequest = Ionic.IO.ApiRequest;
+  var Settings = new Ionic.IO.Settings();
 
   /**
-   * IonicDevPush Service
+   * PushDev Service
    *
    * This service acts as a mock push service that is intended to be used pre-setup of
    * GCM/APNS in an Ionic.io project.
@@ -30,11 +31,14 @@
    */
   class PushDevService {
     constructor() {
-      var io = ionic.io.init();
-      this._serviceHost = io.settings.getURL('push');
+      var io = Ionic.io();
+      this.logger = new Ionic.IO.Logger({
+        'prefix': 'Ionic Push (dev):'
+      })
+      this._serviceHost = Settings.getURL('push');
       this._token = false;
       this._watch = false;
-      this._emitter = ionic.io.core.main.events;
+      this._emitter = Ionic.IO.Core.getEmitter();
     }
 
     /**
@@ -80,7 +84,7 @@
       };
 
       new ApiRequest(requestOptions).then(function() {
-        console.log('Ionic Push: Registered with development push service', token);
+        self.logger.info('registered with development push service', token);
         self._emitter.emit("ionic_push:token", { "token": token });
         if (self.registerCallback) {
           self.registerCallback({
@@ -89,7 +93,7 @@
         }
         self.watch();
       }, function(error) {
-        console.log("Ionic Push: Error connecting development push service.", error);
+        self.logger.error("error connecting development push service.", error);
       });
     }
 
@@ -133,7 +137,7 @@
           alert(notification.message);
         }
       }, function(error) {
-        console.log("Ionic Push: Unable to check for development pushes.", error);
+        self.logger.error("unable to check for development pushes.", error);
       });
     }
 
@@ -143,7 +147,7 @@
      */
     watch() {
       // Check for new dev pushes every 5 seconds
-      console.log('Ionic Push: Watching for new notifications');
+      this.logger.info('watching for new notifications');
       var self = this;
       if (!this._watch) {
         this._watch = setInterval(function() { self.checkForNotifications(); }, 5000);
@@ -162,7 +166,6 @@
 
   }
 
-  ionic.io.register('push');
-  ionic.io.push.PushDevService = PushDevService;
+  Ionic.namespace('Ionic', 'PushDevService', PushDevService, window);
 
 })();

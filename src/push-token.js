@@ -1,6 +1,6 @@
 (function() {
 
-  class IonicPushToken {
+  class PushToken {
 
     constructor(token) {
       this._token = token || null;
@@ -16,12 +16,11 @@
 
     toString() {
       var token = this._token || 'null';
-      return '<IonicPushToken [\'' + token + '\']>';
+      return '<PushToken [\'' + token + '\']>';
     }
   }
 
-  ionic.io.register('push');
-  ionic.io.push.Token = IonicPushToken;
+  Ionic.namespace('Ionic', 'PushToken', PushToken, window);
 
 })();
 
