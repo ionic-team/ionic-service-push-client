@@ -15,6 +15,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
   // Grab the current app
   var app = {}
+  var destroyNotificationReceivedHandler;
   var oldApp = $ionicApp.getApp();
   if ($ionicCoreSettings.get('app_id') && $ionicCoreSettings.get('api_key')) {
     // Get needed values form core settings
@@ -29,7 +30,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
     }
 
     if (!app.gcm_key) {
-      console.warn('PUSH: Unable to get GCM project number, run "ionic config set gcm_key your-gcm-id"');
+      console.warn('PUSH: Unable to get GCM project number, run "ionic config set gcm_id your-gcm-id"');
     }
   } else {
     console.warn('CORE: Unable to load app ID or API key, falling back to $ionicApp.getApp()...');
@@ -143,6 +144,9 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
      * It's a notmal push, do normal push things
      */
     } else {
+      if(angular.isFunction(destroyNotificationReceivedHandler)){
+        destroyNotificationReceivedHandler();
+      }
       $cordovaPush.register(config).then(function(token) {
         console.log('$ionicPush:REGISTERED', token);
 
@@ -167,6 +171,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
       });
     }
 
+    destroyNotificationReceivedHandler =
     $rootScope.$on('$cordovaPush:notificationReceived', function(event, notification) {
       console.log('$ionicPush:RECEIVED', JSON.stringify(notification));
 
