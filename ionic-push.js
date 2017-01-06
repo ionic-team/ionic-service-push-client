@@ -148,7 +148,7 @@ function($http, $cordovaPush, $cordovaLocalNotification, $ionicApp, $ionicPushAc
 
         defer.resolve(token);
 
-        if(token !== 'OK') {
+        if(token !== 'OK' && ionic.Platform.isIOS()) {
 
           $rootScope.$emit('$cordovaPush:tokenReceived', {
             token: token,
